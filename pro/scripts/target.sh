@@ -60,9 +60,20 @@ deploy_dag() {
   log "${id}"
   # The DAG version defaults to `git describe`, so a second deploy of the same
   # commit would be rejected (409). Suffix it with the image tag.
-  run dexaflow compile "${dir}" --image "${REGISTRY}/${id}:${tag}" --build --push \
-    --dag-version "$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}" \
-    -o "${REPO_ROOT}/.out/dags/${id}.json"
+  local image="${REGISTRY}/${id}:${tag}" attempt
+  if ! run dexaflow compile "${dir}" --image "${image}" --build --push \
+      --dag-version "$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}" \
+      -o "${REPO_ROOT}/.out/dags/${id}.json"; then
+    # A built image whose push failed is usually a network blip (Cloud Shell
+    # sees "connection refused" now and then): push it again instead of failing.
+    docker image inspect "${image}" >/dev/null 2>&1 || die "compiling ${id} failed; see the error above"
+    for attempt in 1 2 3; do
+      warn "pushing the image failed; retrying (${attempt}/3)"
+      sleep $((attempt * 5))
+      run docker push --quiet "${image}" && break
+      [[ "${attempt}" == "3" ]] && die "could not push ${image}; check the network and run the same command again"
+    done
+  fi
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"
   ok "${id} deployed: ${SERVER}/dags/${id}"
 }
