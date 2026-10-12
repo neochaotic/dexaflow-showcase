@@ -12,3 +12,5 @@ while read -r dir; do
   deploy_dag "${dir}"
   [[ "${TRIGGER:-0}" == "1" ]] && trigger_dag "$(dag_id "${dir}")"
 done < <(dag_dirs "$@")
+
+wait_for_runs

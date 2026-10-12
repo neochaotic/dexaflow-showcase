@@ -16,3 +16,5 @@ while read -r dir; do
   deploy_dag "${dir}"
   trigger_dag "${id}"
 done < <(use_case_dirs "${1:-all}")
+
+wait_for_runs

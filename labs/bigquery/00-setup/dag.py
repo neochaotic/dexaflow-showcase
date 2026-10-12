@@ -13,6 +13,8 @@ from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCreateEmptyDatasetOperator,
     BigQueryInsertJobOperator,
 )
+# durable=False: the Dexaflow 0.5.2 runtime does not support the provider's
+# resumable-job path yet (its task instance lacks `stats_tags`).
 from airflow.sdk import DAG
 
 PROJECT = "{{ var.value.GCP_PROJECT }}"
@@ -36,6 +38,7 @@ with DAG("lab_00_setup", schedule=None, catchup=False, tags=["lab", "gcp"]):
     )
     for name in RAW_TABLES:
         dataset >> BigQueryInsertJobOperator(
+            durable=False,
             task_id=f"copy_raw_{name}",
             project_id=PROJECT,
             location=LOCATION,

@@ -22,6 +22,8 @@ from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCreateEmptyDatasetOperator,
     BigQueryInsertJobOperator,
 )
+# durable=False: the Dexaflow 0.5.2 runtime does not support the provider's
+# resumable-job path yet (its task instance lacks `stats_tags`).
 from airflow.sdk import DAG, Param, task
 
 PROJECT = "{{ var.value.GCP_PROJECT }}"
@@ -132,6 +134,7 @@ ASSERT (SELECT COUNTIF(quantity <= 0 OR country IS NULL) FROM {T}.silver_events`
 
 def bq(task_id: str, sql: str) -> BigQueryInsertJobOperator:
     return BigQueryInsertJobOperator(
+        durable=False,
         task_id=task_id, project_id=PROJECT, location=LOCATION,
         configuration={"query": {"query": sql, "useLegacySql": False,
                                  "maximumBytesBilled": MAX_BYTES_BILLED}},

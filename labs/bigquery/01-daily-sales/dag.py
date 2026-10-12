@@ -19,6 +19,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+# durable=False: the Dexaflow 0.5.2 runtime does not support the provider's
+# resumable-job path yet (its task instance lacks `stats_tags`).
 from airflow.sdk import DAG
 
 PROJECT = "{{ var.value.GCP_PROJECT }}"
@@ -54,6 +56,7 @@ GROUP BY order_date, category;
 
 def bq(task_id: str, sql: str) -> BigQueryInsertJobOperator:
     return BigQueryInsertJobOperator(
+        durable=False,
         task_id=task_id, project_id=PROJECT, location=LOCATION,
         configuration={"query": {"query": sql, "useLegacySql": False,
                                  "maximumBytesBilled": MAX_BYTES_BILLED}},

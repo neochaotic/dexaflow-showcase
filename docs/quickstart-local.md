@@ -26,6 +26,10 @@ dexaflow push .out/dags/<dag_id>.json --server http://localhost:8080
 curl -X POST http://localhost:8080/api/v2/dags/<dag_id>/dagRuns ...
 ```
 
+It then waits for every run, prints `success` or `failed` per DAG with a link
+to the failed run, and exits non-zero if any run failed. `WAIT=0 make demo`
+returns right after triggering.
+
 The BigQuery use cases are skipped locally: they need Workload Identity, which
 only the GKE environment has.
 

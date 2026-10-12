@@ -45,14 +45,43 @@ deploy_dag() {
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"
 }
 
-# trigger_dag unpauses a DAG and starts one run.
+TRIGGERED_RUNS=()
+
+# trigger_dag unpauses a DAG and starts one run. wait_for_runs waits for it.
 trigger_dag() {
-  local id="$1"
+  local id="$1" run_id
   curl -fsS -X PATCH "${SERVER}/api/v2/dags/${id}" -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" \
     -H 'Content-Type: application/json' -d '{"is_paused": false}' >/dev/null
-  curl -fsS -X POST "${SERVER}/api/v2/dags/${id}/dagRuns" -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" \
-    -H 'Content-Type: application/json' -d '{"logical_date": null}' >/dev/null
-  log "${id}: run triggered, see ${SERVER}/dags/${id}"
+  run_id="$(curl -fsS -X POST "${SERVER}/api/v2/dags/${id}/dagRuns" \
+    -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" -H 'Content-Type: application/json' \
+    -d '{"logical_date": null}' | sed -n 's/.*"dag_run_id": *"\([^"]*\)".*/\1/p')"
+  TRIGGERED_RUNS+=("${id} ${run_id}")
+  log "${id}: run ${run_id} triggered, see ${SERVER}/dags/${id}"
+}
+
+# wait_for_runs polls every triggered run until it finishes, prints a summary
+# and fails when any run failed. WAIT=0 skips it.
+wait_for_runs() {
+  [[ "${WAIT:-1}" == "1" && ${#TRIGGERED_RUNS[@]} -gt 0 ]] || return 0
+  log "Waiting for ${#TRIGGERED_RUNS[@]} run(s) to finish (WAIT=0 to skip)"
+  local entry id run_id state failed=0 deadline=$((SECONDS + ${WAIT_TIMEOUT:-1800}))
+  for entry in "${TRIGGERED_RUNS[@]}"; do
+    read -r id run_id <<<"${entry}"
+    while :; do
+      state="$(curl -fsS "${SERVER}/api/v2/dags/${id}/dagRuns/${run_id}" \
+        -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" | sed -n 's/.*"state": *"\([^"]*\)".*/\1/p')"
+      [[ "${state}" == "success" || "${state}" == "failed" ]] && break
+      (( SECONDS < deadline )) || { state="timeout"; break; }
+      sleep 10
+    done
+    if [[ "${state}" == "success" ]]; then
+      printf '  \033[32m%-8s\033[0m %s\n' "${state}" "${id}"
+    else
+      printf '  \033[31m%-8s\033[0m %s  %s/dags/%s/runs/%s\n' "${state}" "${id}" "${SERVER}" "${id}" "${run_id}"
+      failed=1
+    fi
+  done
+  [[ "${failed}" == "0" ]] || die "some runs did not succeed; open the links above for the task logs"
 }
 
 mkdir -p "${REPO_ROOT}/.out/dags"

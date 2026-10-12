@@ -7,3 +7,5 @@ tags:
 python_version: "3.11"
 dependencies:
   - pandas==1.5.3
+  # pandas 1.5.3 wheels are built against numpy 1.x; numpy 2 breaks the import.
+  - numpy<2
