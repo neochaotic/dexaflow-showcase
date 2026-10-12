@@ -83,9 +83,6 @@ make cli
 export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
 
-While the repository is private, clone it with
-`gh repo clone neochaotic/dexaflow-showcase` instead.
-
 `make cli` installs the Dexaflow CLI version pinned in
 [`versions.env`](versions.env), plus the small Python runtime it uses to
 read `dag.py` files.

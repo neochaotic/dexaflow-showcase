@@ -30,7 +30,7 @@ create_dataset -> reset_bronze_day -> generate_shard x8 -> silver_events -> gold
 
 ## Run it
 
-Set up the GKE environment first ([docs/gke.md](../../docs/gke.md)), then:
+Set up the GKE environment first ([LAB.md, Part 1](../../LAB.md#part-1-set-up-gke-and-dexaflow-pro)), then:
 
 ```bash
 make gke-lab

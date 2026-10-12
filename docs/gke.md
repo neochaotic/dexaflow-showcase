@@ -22,7 +22,8 @@ make gke-up       # APIs, Artifact Registry, cluster, Workload Identity
 make gke-deploy   # Postgres, Redis and Dexaflow Pro on the cluster
 make gke-ui       # in a second terminal: UI on http://localhost:8081
 make gke-demo     # build, push, register and trigger every use case
-make gke-lab      # deploy the BigQuery lab (labs/bigquery)
+make gke-info     # UI address, user, and where the password is
+make gke-lab      # deploy both labs, run the BigQuery lab setup and one medallion day
 ```
 
 `make gke-deploy` generates the admin password into `.out/gke-secrets.yaml`

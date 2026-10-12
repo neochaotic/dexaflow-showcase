@@ -15,13 +15,9 @@ tables into your own dataset, so you can break things freely.
 
 ## 1. Get your own environment
 
-```bash
-git clone https://github.com/neochaotic/dexaflow-showcase.git
-cd dexaflow-showcase
-gcloud config set project <your-project>
-make gke-up gke-deploy      # see docs/gke.md
-make gke-ui                 # keep it running, UI on http://localhost:8081
-```
+Follow Part 1 of [LAB.md](../../LAB.md#part-1-set-up-gke-and-dexaflow-pro): it
+creates the GKE cluster and Dexaflow Pro in your project, step by step, and
+leaves `make gke-ui` running with the UI on <http://localhost:8081>.
 
 ## 2. Set your variables
 
@@ -32,9 +28,9 @@ The DAGs never hardcode a project or dataset. They read two Variables:
 | `GCP_PROJECT` | your gcloud project | where BigQuery jobs run and where the dataset lives |
 | `LAB_DATASET` | `dexaflow_lab` | the lab dataset |
 
-`make gke-lab` creates them for you. Change them later in the UI
-(**Admin > Variables**) or with `dexaflow variables set LAB_DATASET my_lab`.
-No redeploy is needed: Variables are read at run time.
+`make gke-lab` creates them when they do not exist yet. Change them later in
+the UI (**Admin > Variables**); later deploys keep your value. No redeploy is
+needed: Variables are read at run time.
 
 ## 3. Run it
 
@@ -64,8 +60,10 @@ registers it, and the UI shows the new version.
    the retry in the task logs.
 4. **Add a task.** Add a `top_brands` table built from `stg_order_lines` after
    `stage_order_lines`, in parallel with `build_daily_sales`.
-5. **Write your own DAG.** `make new-dag NAME=my_first_dag` scaffolds one under
-   `my-dags/`; deploy it with `make deploy DAG=my-dags/my_first_dag DEXAFLOW_TARGET=gke`.
+5. **Write your own DAG.** `make workspace` creates your own DAG folder next to
+   this clone; there, `make new NAME=my_first_dag` scaffolds one and
+   `make deploy DAG=dags/my_first_dag TRIGGER=1` deploys and runs it
+   ([LAB.md, Part 2](../../LAB.md#part-2-write-and-deploy-dags)).
 
 ## Cost
 
