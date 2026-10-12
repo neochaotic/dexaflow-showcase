@@ -2,6 +2,8 @@
 # GKE settings, derived from versions.env and the active gcloud project.
 source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib.sh"
 need gcloud
+# Never let gcloud wait on a yes/no question: some calls hide their output.
+export CLOUDSDK_CORE_DISABLE_PROMPTS=1
 
 GCP_PROJECT="${GCP_PROJECT:-$(gcloud config get-value project 2>/dev/null)}"
 [[ -n "${GCP_PROJECT}" ]] || die "no GCP project: run 'gcloud config set project <id>' or set GCP_PROJECT"

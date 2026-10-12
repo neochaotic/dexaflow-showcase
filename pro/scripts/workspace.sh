@@ -16,4 +16,5 @@ if command -v git >/dev/null 2>&1 && [[ ! -d "${dir}/.git" ]]; then
   git -C "${dir}" commit -q -m "Create Dexaflow DAG workspace" 2>/dev/null \
     || warn "no first commit (set git user.name and user.email); DAG versions will read dev"
 fi
-log "Done. Next: cd ${dir} && make new NAME=my_first_dag"
+ok "Workspace ready: ${dir}"
+next "cd ${dir}"

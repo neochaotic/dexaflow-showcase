@@ -61,6 +61,7 @@ deploy_dag() {
     --dag-version "$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}" \
     -o "${REPO_ROOT}/.out/dags/${id}.json"
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"
+  ok "${id} deployed: ${SERVER}/dags/${id}"
 }
 
 TRIGGERED_RUNS=()
@@ -76,15 +77,16 @@ trigger_dag() {
   curl -fsS -X PATCH "${SERVER}/api/v2/dags/${id}" -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" \
     -H 'Content-Type: application/json' -d '{"is_paused": false}' >/dev/null
   TRIGGERED_RUNS+=("${id} ${run_id}")
-  log "${id}: run ${run_id} triggered, see ${SERVER}/dags/${id}"
+  log "${id}: run ${run_id} started"
 }
 
 # wait_for_runs polls every triggered run until it finishes, prints a summary
 # and fails when any run failed. WAIT=0 skips it.
 wait_for_runs() {
   [[ "${WAIT:-1}" == "1" && ${#TRIGGERED_RUNS[@]} -gt 0 ]] || return 0
-  log "Waiting for ${#TRIGGERED_RUNS[@]} run(s) to finish (WAIT=0 to skip)"
-  local entry id run_id state failed=0 deadline=$((SECONDS + ${WAIT_TIMEOUT:-1800}))
+  log "Waiting for ${#TRIGGERED_RUNS[@]} run(s) to finish (WAIT=0 to skip; Ctrl+C stops waiting, not the run)"
+  log "Follow them in the UI: ${SERVER}/dags"
+  local entry id run_id state failed=0 start=${SECONDS} beat=${SECONDS} deadline=$((SECONDS + ${WAIT_TIMEOUT:-1800}))
   for entry in "${TRIGGERED_RUNS[@]}"; do
     read -r id run_id <<<"${entry}"
     while :; do
@@ -93,11 +95,17 @@ wait_for_runs() {
       [[ "${state}" == "success" || "${state}" == "failed" ]] && break
       (( SECONDS < deadline )) || { state="timeout"; break; }
       sleep 10
+      # A heartbeat every 30 seconds, so a long run never looks like a frozen terminal.
+      if (( SECONDS - beat >= 30 )); then
+        beat=${SECONDS}
+        printf '   ... %s is %s (%dm%02ds)\n' "${id}" "${state:-queued}" \
+          $(((SECONDS - start) / 60)) $(((SECONDS - start) % 60))
+      fi
     done
     if [[ "${state}" == "success" ]]; then
-      printf '  \033[32m%-8s\033[0m %s\n' "${state}" "${id}"
+      printf '  \033[1;32m%-8s %s\033[0m\n' "${state}" "${id}"
     else
-      printf '  \033[31m%-8s\033[0m %s  %s/dags/%s/runs/%s\n' "${state}" "${id}" "${SERVER}" "${id}" "${run_id}"
+      printf '  \033[1;31m%-8s %s\033[0m  %s/dags/%s/runs/%s\n' "${state}" "${id}" "${SERVER}" "${id}" "${run_id}"
       failed=1
     fi
   done

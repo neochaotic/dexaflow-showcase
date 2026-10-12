@@ -57,6 +57,7 @@ run kubectl -n "${NAMESPACE}" rollout status deploy/postgres --timeout=300s
 run kubectl -n "${NAMESPACE}" rollout status deploy/redis --timeout=180s
 
 log "Installing Dexaflow Pro ${DEXAFLOW_VERSION}"
+slow "Helm waits until every Dexaflow pod runs: 2 to 5 minutes with no output"
 run helm upgrade --install "${RELEASE}" "${DEXAFLOW_CHART}" --version "${DEXAFLOW_VERSION}" \
   -n "${NAMESPACE}" \
   -f "${REPO_ROOT}/pro/platform/base/values.yaml" \
@@ -66,6 +67,6 @@ run helm upgrade --install "${RELEASE}" "${DEXAFLOW_CHART}" --version "${DEXAFLO
   --set-string "taskServiceAccount.annotations.iam\.gke\.io/gcp-service-account=${TASK_GSA}" \
   --wait --timeout 10m
 
-log "Deployed. Open the UI with: make gke-ui"
-log "Show the UI address and login with: make gke-info"
-log "Run the demos with: make gke-demo"
+ok "Dexaflow Pro ${DEXAFLOW_VERSION} is running on ${GKE_CLUSTER}"
+next "make gke-ui    (opens the UI in the background)"
+next "make gke-info  (shows how to sign in)"

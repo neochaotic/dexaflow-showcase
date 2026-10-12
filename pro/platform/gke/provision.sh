@@ -11,6 +11,7 @@ need kubectl; need docker
 log "Project ${GCP_PROJECT}, cluster ${GKE_CLUSTER} in ${GKE_ZONE}"
 
 log "Enabling APIs"
+slow "Up to 2 minutes on a new project"
 run gcloud services enable container.googleapis.com artifactregistry.googleapis.com \
   bigquery.googleapis.com iam.googleapis.com --project "${GCP_PROJECT}"
 
@@ -25,7 +26,8 @@ run gcloud auth configure-docker "${AR_HOST}" --quiet
 
 if ! gcloud container clusters describe "${GKE_CLUSTER}" --zone "${GKE_ZONE}" \
     --project "${GCP_PROJECT}" >/dev/null 2>&1; then
-  log "Creating GKE cluster ${GKE_CLUSTER} (this is the slow step)"
+  log "Creating GKE cluster ${GKE_CLUSTER}"
+  slow "About 8 minutes. gcloud shows a spinner; wait for the next ==> line"
   run gcloud container clusters create "${GKE_CLUSTER}" \
     --project "${GCP_PROJECT}" --zone "${GKE_ZONE}" \
     --release-channel regular \
@@ -72,4 +74,5 @@ GCP_PROJECT=${GCP_PROJECT}
 DEXAFLOW_REGISTRY=${AR_HOST}/${GCP_PROJECT}/${AR_REPO}
 DEXAFLOW_SERVER=http://localhost:${GKE_UI_PORT}
 ENV
-log "Provisioned. Next: make gke-deploy"
+ok "GKE environment ready: cluster ${GKE_CLUSTER} in ${GCP_PROJECT}"
+next "make gke-deploy"

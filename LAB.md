@@ -19,6 +19,21 @@ should see. If what you see differs, see [Troubleshooting](#troubleshooting).
 Do the parts in order: each one starts where the previous one ended. Part 1 is
 the only long wait (about 8 minutes for the cluster).
 
+## How to follow this lab
+
+- **Copy each grey block whole** (the copy icon at its top right) and paste it
+  into the terminal. It runs line by line; you do not need to press anything
+  else.
+- **A step is done when your prompt comes back** (the line ending in `$`).
+- **Yellow ⏳ lines announce a long, quiet step.** Until the next line appears
+  the terminal is busy, not stuck. Do not press Ctrl+C.
+- **Green ✔ lines mark a finished step**, and the bold **Next:** line under it
+  says what comes next.
+- **Only one command asks you something**: `make gke-down` in Task 14 asks you
+  to type your project id.
+- If the terminal shows `>` and waits, part of a pasted block is missing: press
+  **Ctrl+C** and paste the whole block again.
+
 ## Before you start
 
 - A Google Cloud project with billing enabled, where you have the **Owner**
@@ -58,7 +73,9 @@ Dexaflow Pro running on GKE and the Airflow UI open in your browser.
 
 **Option A: Cloud Shell.** [Open Cloud Shell](https://shell.cloud.google.com/).
 It already has `gcloud`, `kubectl`, `helm`, `docker`, `make` and `bq`, and is
-signed in as you. Go to [Task 1](#task-1-get-the-code-and-the-dexaflow-cli).
+signed in as you. The first time a command uses your account, Cloud Shell opens
+an **Authorize Cloud Shell** window: click **Authorize**, or the terminal waits
+for it. Go to [Task 1](#task-1-get-the-code-and-the-dexaflow-cli).
 
 **Option B: your own terminal (macOS or Linux).** Install
 [`gcloud`](https://cloud.google.com/sdk/docs/install),
@@ -83,8 +100,18 @@ make cli
 export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
 
-On a machine without Python 3.11 (Cloud Shell, for example), the first
-`make cli` downloads one, which can take a minute or two.
+⏳ On a machine without Python 3.11 (Cloud Shell, for example), `make cli`
+downloads one: up to 2 minutes with no output after the yellow line.
+
+**You should see** at the end:
+
+```
+✔ Dexaflow CLI 0.5.3 is ready
+==> New terminals find dexaflow on their own. In this one, run:
+   Next: export PATH="$HOME/.dexaflow/bin:$PATH"
+```
+
+The block above already ran that `export` line for you.
 
 `make cli` installs the Dexaflow CLI version pinned in
 [`versions.env`](versions.env), plus the small Python runtime it uses to
@@ -97,9 +124,9 @@ dexaflow version
 make doctor
 ```
 
-`dexaflow version` prints `0.5.3`. `make doctor` prints `ok` for every tool
-and the account you are signed in with; `k3d` and `kubeconform` show `skip`,
-they are not needed for this lab.
+`dexaflow version` prints **`0.5.3`**. `make doctor` prints **`ok`** for every
+tool and the account you are signed in with; `k3d` and `kubeconform` show
+`skip`, they are not needed for this lab.
 
 ### Task 2. Point the lab at your project
 
@@ -119,13 +146,18 @@ command, not only this lab. It may also print a warning about the quota project
 of your application default credentials, or about a missing `environment` tag
 on the project; both are safe to ignore here.
 
+If it asks *Do you want to continue (Y/n)?*, gcloud cannot find that project
+under your account: the id is probably mistyped. Type `n`, check the id in the
+[console](https://console.cloud.google.com/) (the **ID** column of the project
+picker, not the name) and run the command again.
+
 **Check your progress**
 
 ```bash
 gcloud config get-value project
 ```
 
-It prints your project id.
+It prints **your project id**.
 
 ### Task 3. Create the GKE cluster
 
@@ -143,8 +175,20 @@ exactly what it does. It enables the APIs, then creates:
 | Service account | `dexaflow-tasks` | identity of the task pods, with BigQuery job and data access |
 | Workload Identity binding | `dexaflow/dexaflow-task` | task pods act as `dexaflow-tasks` with no key file |
 
-Creating the cluster takes about 8 minutes. Running `make gke-up` again is safe:
-it skips what already exists.
+⏳ **This is the long step: about 10 minutes in all.** Enabling the APIs can take
+2 minutes, then creating the cluster about 8, while gcloud shows only a
+spinner. Running `make gke-up` again is safe: it skips what already exists.
+
+**You should see** at the end:
+
+```
+✔ GKE environment ready: cluster dexaflow-showcase in my-project-id
+   Next: make gke-deploy
+```
+
+If a yellow `WARN Cluster dexaflow-showcase already exists` line showed up
+instead of the cluster creation, this project already had the lab's cluster
+with whatever was deployed on it; see [Troubleshooting](#troubleshooting).
 
 **Check your progress**
 
@@ -157,7 +201,7 @@ NAME                                         STATUS   ROLES    AGE   VERSION
 gke-dexaflow-showcase-default-pool-...       Ready    <none>   2m    v1.3x...
 ```
 
-One node, `Ready`.
+**One node, `Ready`.**
 
 ### Task 4. Install Dexaflow Pro
 
@@ -171,14 +215,25 @@ Dexaflow Pro Helm chart. It generates an admin password into
 `.out/gke-secrets.yaml`, which git ignores, and keeps a copy in the cluster so
 another clone of the repo reuses it.
 
+⏳ After the `Installing Dexaflow Pro` line, Helm waits until every Dexaflow pod
+runs: 2 to 5 minutes with no output.
+
+**You should see** at the end:
+
+```
+✔ Dexaflow Pro 0.5.3 is running on dexaflow-showcase
+   Next: make gke-ui    (opens the UI in the background)
+   Next: make gke-info  (shows how to sign in)
+```
+
 **Check your progress**
 
 ```bash
 kubectl -n dexaflow get pods
 ```
 
-The `dexaflow-...`, `postgres-...` and `redis-...` pods show `1/1` and
-`Running`. If DAGs already ran on this cluster, you also see `Completed` task
+The `dexaflow-...`, `postgres-...` and `redis-...` pods show **`1/1`** and
+**`Running`**. If DAGs already ran on this cluster, you also see `Completed` task
 pods (named `leoflow-...`, the project's former name).
 
 ### Task 5. Open the Airflow UI
@@ -191,24 +246,35 @@ make gke-ui
 make gke-info
 ```
 
+Your prompt comes back right away: the port-forward keeps running in the
+background. **You should see:**
+
 ```
-==> UI on http://localhost:8081 (runs in the background; stop it with: make gke-ui-stop)
+✔ UI on http://localhost:8081
+==> It runs in the background, so this terminal stays free (stop it with: make gke-ui-stop)
+   Next: make gke-info  (shows how to sign in)
   UI        http://localhost:8081   (start it with: make gke-ui)
   user      admin@leoflow.local
   password  run: grep -A1 '^bootstrap:' .out/gke-secrets.yaml
   ...
 ```
 
-Show your password with the command `make gke-info` prints:
+Show your password with the command `make gke-info` prints (it stays on your
+screen only; do not paste it anywhere public):
 
 ```bash
 grep -A1 '^bootstrap:' .out/gke-secrets.yaml
 ```
 
-Then open <http://localhost:8081> and sign in as `admin@leoflow.local` with
-that password. In Cloud Shell, use **Web Preview > Change port**, type `8081`,
-then **Change and Preview** (the default "Preview on port 8080" shows *Unable
-to forward your request to a backend*).
+The password is the text after **`password:`**.
+
+Then open the UI and sign in as **`admin@leoflow.local`** with that password:
+
+- **Your own machine:** open <http://localhost:8081>.
+- **Cloud Shell:** click **Web Preview** (a button at the top right of the
+  terminal panel) > **Change port**, type **`8081`**, then **Change and Preview**.
+  The default *Preview on port 8080* shows *Unable to forward your request to a
+  backend*.
 
 **Check your progress**
 
@@ -216,7 +282,7 @@ to forward your request to a backend*).
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8081/readyz
 ```
 
-It prints `200`, and the browser shows the Airflow 3.2 UI, with no DAGs yet.
+It prints **`200`**, and the browser shows the Airflow 3.2 UI, with no DAGs yet.
 
 ## Part 2. Write and deploy DAGs
 
@@ -243,14 +309,21 @@ make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
    in the UI.
 3. `TRIGGER=1` starts a run and waits for it to finish.
 
+⏳ The first build of an image takes a minute or two and prints Docker's build
+steps. While the run goes, a `... is running (1m30s)` line appears every 30
+seconds; the run itself takes about a minute.
+
 **Check your progress**
 
 The command ends with:
 
 ```
+✔ showcase_hello_pipeline deployed: http://localhost:8081/dags/showcase_hello_pipeline
+...
   success  showcase_hello_pipeline
 ```
 
+**`success`** in green means the run finished.
 In the UI, open `showcase_hello_pipeline` and its run. Each task ran in its own
 pod. Click `load`, then **XCom**, to see the summary it returned.
 
@@ -294,8 +367,8 @@ config: the DAG id, the Python version and the dependencies (none yet).
 
 **Check your progress**
 
-The command ends with `success  my_first_dag`, and `my_first_dag` shows in the
-UI with one green run. `make list` prints `dags/my_first_dag`.
+The command ends with **`success  my_first_dag`**, and `my_first_dag` shows in
+the UI with one green run. `make list` prints `dags/my_first_dag`.
 
 This is the loop for any DAG from now on: edit files under `dags/`, then
 `make deploy DAG=dags/<name>`. To keep your DAGs, commit them and push the
@@ -347,7 +420,7 @@ shares one Python environment, so one DAG's dependency can break another.
 
 **Check your progress**
 
-The command ends with `success  my_first_dag`. In the UI the DAG now has two
+The command ends with **`success  my_first_dag`**. In the UI the DAG now has two
 tasks, and the log of `greet` shows five generated names.
 
 ### Task 9 (optional). Two pandas versions side by side
@@ -392,8 +465,12 @@ make deploy DAG=use-cases/04-gcp-bigquery-report TRIGGER=1
 
 Before deploying, `make deploy` creates the `google_cloud_default` connection
 (no key in it) and the `GCP_PROJECT` and `LAB_DATASET` Variables. See them in the
-UI under **Admin > Connections** and **Admin > Variables**. This first build
+UI under **Admin > Connections** and **Admin > Variables**. ⏳ This first build
 takes about 2 minutes because of the Google provider packages.
+
+The first `bq` command in a new Cloud Shell may print *Welcome to BigQuery!*
+and set itself up; if it asks you to pick a default project, type the number
+next to your project id and press Enter.
 
 **Check your progress**
 
@@ -402,7 +479,7 @@ bq query --use_legacy_sql=false \
   'SELECT COUNT(*) AS row_count FROM dexaflow_showcase.top_names_by_decade'
 ```
 
-`row_count` is `60`: 5 names for each of 12 decades.
+**`row_count` is `60`**: 5 names for each of 12 decades.
 
 ### Task 11. Deploy the labs
 
@@ -410,7 +487,8 @@ bq query --use_legacy_sql=false \
 make gke-lab
 ```
 
-This deploys four DAGs and runs two of them, then waits:
+This deploys four DAGs and runs two of them, then waits. ⏳ About 5 minutes:
+the medallion run starts eight pods, and the cluster may add a node for them.
 
 | DAG | What it does | Runs now |
 |---|---|---|
@@ -445,7 +523,7 @@ bq query --use_legacy_sql=false \
   'SELECT table_id, row_count FROM dexaflow_lab.__TABLES__ WHERE table_id NOT LIKE "%events" AND table_id NOT LIKE "gold%" ORDER BY table_id'
 ```
 
-You see `mart_daily_sales`, the four `raw_*` tables with thousands of rows each,
+You see **`mart_daily_sales`**, the four `raw_*` tables with thousands of rows each,
 and `stg_order_lines`.
 
 **Change a Variable, not the code.** In the UI, open **Admin > Variables**, set
@@ -477,7 +555,7 @@ bq query --use_legacy_sql=false \
   'SELECT table_id, row_count FROM dexaflow_lab.__TABLES__ WHERE table_id LIKE "%events" OR table_id LIKE "gold%" ORDER BY table_id'
 ```
 
-`bronze_events` has `4000000` rows, `silver_events` about 3.9 million, and the
+**`bronze_events` has `4000000` rows**, `silver_events` about 3.9 million, and the
 two `gold_*` tables a few rows each.
 
 **Want more?** Choose **Trigger** on `lab_medallion_daily` in the UI and set
@@ -498,17 +576,22 @@ In the `dexaflow-showcase` folder:
 make gke-down
 ```
 
-It lists what it will delete and asks you to type the project id:
+It lists what it will delete and asks you to type the project id (type it,
+then press Enter):
 
 - the GKE cluster `dexaflow-showcase`
 - the Artifact Registry repository `dexaflow-showcase`
 - the BigQuery datasets `dexaflow_showcase` and `dexaflow_lab`
 - the service account `dexaflow-tasks` and its role bindings
 
+⏳ Deleting the cluster takes about 5 minutes. **You should see** at the end:
+
+```
+✔ GKE demo environment removed from my-project-id
+```
+
 If you changed `LAB_DATASET` in Part 3, delete that dataset too:
 `bq rm -r -f -d my_lab`.
-
-Stop the UI port-forward with `make gke-ui-stop`.
 
 **Check your progress**
 
@@ -516,7 +599,7 @@ Stop the UI port-forward with `make gke-ui-stop`.
 gcloud container clusters list
 ```
 
-`dexaflow-showcase` is not listed.
+**`dexaflow-showcase` is not listed** (the list may be empty).
 
 ## What next
 
@@ -528,6 +611,9 @@ gcloud container clusters list
 
 | Symptom | Fix |
 |---|---|
+| The terminal shows `>` and waits | Part of a pasted block is missing. Press **Ctrl+C**, then copy the whole block again with its copy icon. |
+| Nothing new on screen for minutes | Check for a yellow ⏳ line above: that step is long and quiet. With none, press **Enter** once; if a question shows up, answer it. |
+| Cloud Shell waits after the first `gcloud` command | Click **Authorize** in the *Authorize Cloud Shell* window. |
 | `dexaflow: command not found` | `export PATH="$HOME/.dexaflow/bin:$PATH"`, or open a new terminal. |
 | `no GCP project` | Run Task 2: `gcloud config set project my-project-id`. |
 | `make gke-up` fails on an API or IAM step | You need Owner (or Editor plus Project IAM Admin) on the project. |
@@ -535,6 +621,7 @@ gcloud container clusters list
 | Cloud Shell shows *Unable to forward your request to a backend ... port 8080* | Web Preview opened 8080; use **Change port** and `8081`, or replace the leading `8080-` in the preview URL with `8081-`. |
 | The UI already lists DAGs you did not deploy | `make gke-up` reused an existing cluster in your project (it says so in yellow). `make gke-reset` empties its database. |
 | `curl` prints `000` | The UI port-forward is not running: `make gke-ui`. |
+| `bq` asks for a default project | Type the number next to your project id, then Enter. |
 | `invalid credentials` | The user is `admin@leoflow.local`, not `admin`. |
 | `no Dexaflow server at http://localhost:8081` | The UI port-forward is not running: `make gke-ui` (its log is `.out/gke-ui.log`). |
 | `failed  <dag_id>` and a link | Open the link, click the red task, read its log. |

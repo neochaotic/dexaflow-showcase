@@ -7,6 +7,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${REPO_ROOT}/versions.env"
 
 log()  { printf '\033[36m==>\033[0m %s\n' "$*"; }
+# ok marks a finished step, slow a step that runs for minutes without output
+# (the terminal is busy, not stuck), next the command to run after this one.
+ok()   { printf '\033[1;32m✔ %s\033[0m\n' "$*"; }
+slow() { printf '\033[1;33m⏳ %s\033[0m\n' "$*"; }
+next() { printf '\033[1m   Next: %s\033[0m\n' "$*"; }
 warn() { printf '\033[33mWARN\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[31mERROR\033[0m %s\n' "$*" >&2; exit 1; }
 

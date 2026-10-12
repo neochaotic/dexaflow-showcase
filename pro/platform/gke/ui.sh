@@ -15,7 +15,7 @@ if [[ "${1:-start}" == "stop" ]]; then
     pid="$(cat "${PID_FILE}")"
     pkill -P "${pid}" 2>/dev/null || true
     kill "${pid}" 2>/dev/null || true
-    log "Stopped the UI port-forward"
+    ok "Stopped the UI port-forward"
   else
     log "The UI port-forward is not running"
   fi
@@ -41,8 +41,9 @@ else
     die "the UI did not answer on ${URL}; see .out/gke-ui.log (is 'make gke-deploy' done?)"
   fi
 fi
-log "UI on ${URL} (runs in the background; stop it with: make gke-ui-stop)"
+ok "UI on ${URL}"
+log "It runs in the background, so this terminal stays free (stop it with: make gke-ui-stop)"
 if [[ -n "${CLOUD_SHELL:-}" ]]; then
-  log "Cloud Shell: Web Preview > Change port > ${GKE_UI_PORT} (not the default 8080)"
+  next "Cloud Shell: Web Preview > Change port > ${GKE_UI_PORT} (not the default 8080)"
 fi
-log "Sign-in details: make gke-info"
+next "make gke-info  (shows how to sign in)"

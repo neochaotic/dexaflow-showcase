@@ -7,11 +7,13 @@ echo "  - GKE cluster ${GKE_CLUSTER} (${GKE_ZONE}) and everything in it"
 echo "  - Artifact Registry repository ${AR_REPO} (${GKE_REGION})"
 echo "  - BigQuery datasets ${BQ_DATASET} and ${LAB_DATASET}"
 echo "  - service account ${TASK_GSA}"
-read -r -p "Type the project id to confirm: " answer
-[[ "${answer}" == "${GCP_PROJECT}" ]] || die "aborted"
+printf '\033[1mType the project id (%s) and press Enter to confirm: \033[0m' "${GCP_PROJECT}"
+read -r answer
+[[ "${answer}" == "${GCP_PROJECT}" ]] || die "not confirmed, nothing deleted"
 
 bash "$(dirname "$0")/ui.sh" stop
 
+slow "Deleting the cluster takes about 5 minutes"
 run gcloud container clusters delete "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" --quiet || true
 run gcloud artifacts repositories delete "${AR_REPO}" --location "${GKE_REGION}" --project "${GCP_PROJECT}" --quiet || true
 for ds in "${BQ_DATASET}" "${LAB_DATASET}"; do
@@ -23,4 +25,4 @@ for role in roles/bigquery.jobUser roles/bigquery.dataEditor; do
 done
 run gcloud iam service-accounts delete "${TASK_GSA}" --project "${GCP_PROJECT}" --quiet || true
 rm -f "${GKE_ENV}" "${GKE_SECRETS}"
-log "GKE demo environment removed"
+ok "GKE demo environment removed from ${GCP_PROJECT}"

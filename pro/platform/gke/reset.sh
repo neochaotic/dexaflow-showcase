@@ -7,7 +7,8 @@ need kubectl; need helm
 
 echo "This empties the Dexaflow database of cluster ${GKE_CLUSTER} in ${GCP_PROJECT}:"
 echo "  every DAG, run, Variable and connection. The cluster, login and BigQuery data stay."
-read -r -p "Type the project id to confirm: " answer
+printf '\033[1mType the project id (%s) and press Enter to confirm: \033[0m' "${GCP_PROJECT}"
+read -r answer
 [[ "${answer}" == "${GCP_PROJECT}" ]] || die "not confirmed, nothing changed"
 
 run gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}"
@@ -29,4 +30,4 @@ done
 log "Removing finished task pods"
 run kubectl -n "${NAMESPACE}" delete pod --field-selector=status.phase==Succeeded --ignore-not-found >/dev/null
 run kubectl -n "${NAMESPACE}" delete pod --field-selector=status.phase==Failed --ignore-not-found >/dev/null
-log "Done: the UI is empty. If 'make gke-ui' was running it reconnects by itself."
+ok "Dexaflow is empty. If 'make gke-ui' was running it reconnects by itself."
