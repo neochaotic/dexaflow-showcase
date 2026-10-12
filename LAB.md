@@ -83,6 +83,9 @@ make cli
 export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
 
+While the repository is private, clone it with
+`gh repo clone neochaotic/dexaflow-showcase` instead.
+
 `make cli` installs the Dexaflow CLI version pinned in
 [`versions.env`](versions.env), plus the small Python runtime it uses to
 read `dag.py` files.
@@ -117,6 +120,11 @@ cluster.
 > cd dexaflow-showcase
 > export GCP_PROJECT=my-project-id DEXAFLOW_TARGET=gke PATH="$HOME/.dexaflow/bin:$PATH"
 > ```
+
+`gcloud config set project` changes your default project for every gcloud
+command, not only this lab. It may also print a warning about the quota project
+of your application default credentials, or about a missing `environment` tag
+on the project; both are safe to ignore here.
 
 **Check your progress**
 
@@ -177,7 +185,8 @@ kubectl -n dexaflow get pods
 ```
 
 The `dexaflow-...`, `postgres-...` and `redis-...` pods show `1/1` and
-`Running`.
+`Running`. If DAGs already ran on this cluster, you also see `Completed` task
+pods (named `leoflow-...`, the project's former name).
 
 ### Task 5. Open the Airflow UI
 
@@ -264,7 +273,9 @@ cd ../dexaflow-workspace
 make help
 ```
 
-Now scaffold a DAG project in it, replace its `dag.py`, and deploy it:
+Now scaffold a DAG project in it, replace its `dag.py`, and deploy it.
+(`make new` uses `dexaflow init`, which suggests `dexaflow lite` as a next
+step; that is the single-host edition, so skip it here.)
 
 ```bash
 make new NAME=my_first_dag
@@ -448,7 +459,9 @@ and `stg_order_lines`.
 **Change a Variable, not the code.** In the UI, open **Admin > Variables**, set
 `LAB_DATASET` to `my_lab`, and trigger `lab_00_setup` again from the UI. It
 writes to the new dataset with no redeploy, because Variables are read at run
-time. Set it back to `dexaflow_lab` afterwards.
+time. Later deploys keep the value you set. Set it back to `dexaflow_lab`
+afterwards, and delete the extra dataset with
+`bq rm -r -f -d "$GCP_PROJECT:my_lab"`.
 
 ### Task 13. Look at 4 million events
 

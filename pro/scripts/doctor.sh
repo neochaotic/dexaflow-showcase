@@ -34,7 +34,11 @@ if command -v gcloud >/dev/null 2>&1; then
   fi
 fi
 log "Optional"
-check kubeconform "schema-checks the rendered manifests in the dry run"
+if command -v kubeconform >/dev/null 2>&1; then
+  printf '  \033[32mok\033[0m       %-12s %s\n' "kubeconform" "schema-checks the rendered manifests in the dry run"
+else
+  printf '  \033[2mskip\033[0m     %-12s %s\n' "kubeconform" "optional: schema-checks the rendered manifests in the dry run"
+fi
 
 if [[ "${missing}" -ne 0 ]]; then
   warn "some tools are missing; docs/prerequisites.md says how to install them"

@@ -13,5 +13,10 @@ else
     | DEXAFLOW_VERSION="v${DEXAFLOW_VERSION}" DEXAFLOW_INSTALL_DIR="${BIN_DIR}" \
       DEXAFLOW_NO_SETUP=1 DEXAFLOW_NO_PATH=1 sh
 fi
-run "${BIN_DIR}/dexaflow" setup
+# `dexaflow setup` prepares the Python runtime that parses dag.py. Its output is
+# about Dexaflow Lite, so keep it in a log and show it only on failure.
+mkdir -p "${REPO_ROOT}/.out"
+log "Preparing the DAG parser runtime (dexaflow setup, log in .out/dexaflow-setup.log)"
+"${BIN_DIR}/dexaflow" setup >"${REPO_ROOT}/.out/dexaflow-setup.log" 2>&1 \
+  || { cat "${REPO_ROOT}/.out/dexaflow-setup.log" >&2; die "dexaflow setup failed"; }
 log "Done. Add it to this shell with: export PATH=\"\$HOME/.dexaflow/bin:\$PATH\""

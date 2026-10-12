@@ -29,8 +29,18 @@ configure_gcp() {
   run dexaflow connections set google_cloud_default --server "${SERVER}" \
     --conn-type google_cloud_platform --extra "{\"project\": \"${GCP_PROJECT}\"}" \
     --description "Keyless (Workload Identity), set by dexaflow-showcase"
-  run dexaflow variables set GCP_PROJECT "${GCP_PROJECT}" --server "${SERVER}"
-  run dexaflow variables set LAB_DATASET "${LAB_DATASET}" --server "${SERVER}"
+  default_variable GCP_PROJECT "${GCP_PROJECT}"
+  default_variable LAB_DATASET "${LAB_DATASET}"
+}
+
+# default_variable creates a Variable only when it does not exist yet, so a
+# value changed in the UI survives later deploys.
+default_variable() {
+  if dexaflow variables get "$1" --server "${SERVER}" >/dev/null 2>&1; then
+    log "Variable $1 already set, keeping its value (change it in Admin > Variables)"
+  else
+    run dexaflow variables set "$1" "$2" --server "${SERVER}"
+  fi
 }
 
 # deploy_dag builds and pushes one DAG's image, then registers its dag.json.

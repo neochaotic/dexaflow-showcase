@@ -11,5 +11,9 @@ cp -R "${REPO_ROOT}/pro/workspace-template/." "${dir}/"
 sed -i.bak "s|__SHOWCASE__|${REPO_ROOT}|" "${dir}/Makefile" && rm -f "${dir}/Makefile.bak"
 if command -v git >/dev/null 2>&1 && [[ ! -d "${dir}/.git" ]]; then
   git -C "${dir}" init -q
+  # A first commit gives deployed DAGs a real version label instead of "dev".
+  git -C "${dir}" add -A
+  git -C "${dir}" commit -q -m "Create Dexaflow DAG workspace" 2>/dev/null \
+    || warn "no first commit (set git user.name and user.email); DAG versions will read dev"
 fi
 log "Done. Next: cd ${dir} && make new NAME=my_first_dag"
