@@ -274,7 +274,8 @@ Then open the UI and sign in as **`admin@leoflow.local`** with that password:
 - **Cloud Shell:** click **Web Preview** (a button at the top right of the
   terminal panel) > **Change port**, type **`8081`**, then **Change and Preview**.
   The default *Preview on port 8080* shows *Unable to forward your request to a
-  backend*.
+  backend*. If you landed there, change the start of the address from `8080-`
+  to **`8081-`** and reload.
 
 **Check your progress**
 

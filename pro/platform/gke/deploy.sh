@@ -57,7 +57,7 @@ run kubectl -n "${NAMESPACE}" rollout status deploy/postgres --timeout=300s
 run kubectl -n "${NAMESPACE}" rollout status deploy/redis --timeout=180s
 
 log "Installing Dexaflow Pro ${DEXAFLOW_VERSION}"
-slow "Helm waits until every Dexaflow pod runs: 2 to 5 minutes with no output"
+slow "Helm waits until every Dexaflow pod runs: 2 to 5 minutes with no output (log: .out/helm-install.log)"
 run helm upgrade --install "${RELEASE}" "${DEXAFLOW_CHART}" --version "${DEXAFLOW_VERSION}" \
   -n "${NAMESPACE}" \
   -f "${REPO_ROOT}/pro/platform/base/values.yaml" \
@@ -65,7 +65,10 @@ run helm upgrade --install "${RELEASE}" "${DEXAFLOW_CHART}" --version "${DEXAFLO
   -f "${GKE_SECRETS}" \
   --set taskNamespace="${NAMESPACE}" \
   --set-string "taskServiceAccount.annotations.iam\.gke\.io/gcp-service-account=${TASK_GSA}" \
-  --wait --timeout 10m
+  --wait --timeout 10m >"${REPO_ROOT}/.out/helm-install.log" 2>&1 \
+  || { cat "${REPO_ROOT}/.out/helm-install.log" >&2; die "helm install failed (log: .out/helm-install.log)"; }
+# The chart's long install notes (port 8080, TLS, network policy) are for
+# operators, not for this lab; they stay in the log.
 
 ok "Dexaflow Pro ${DEXAFLOW_VERSION} is running on ${GKE_CLUSTER}"
 next "make gke-ui    (opens the UI in the background)"
