@@ -10,6 +10,8 @@ echo "  - service account ${TASK_GSA}"
 read -r -p "Type the project id to confirm: " answer
 [[ "${answer}" == "${GCP_PROJECT}" ]] || die "aborted"
 
+bash "$(dirname "$0")/ui.sh" stop
+
 run gcloud container clusters delete "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" --quiet || true
 run gcloud artifacts repositories delete "${AR_REPO}" --location "${GKE_REGION}" --project "${GCP_PROJECT}" --quiet || true
 for ds in "${BQ_DATASET}" "${LAB_DATASET}"; do
