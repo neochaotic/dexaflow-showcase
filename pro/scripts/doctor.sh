@@ -26,10 +26,11 @@ check gcloud      "creates the cluster, registry and service accounts"
 check gke-gcloud-auth-plugin "lets kubectl talk to GKE"
 check bq          "used by make gke-down to delete the BigQuery datasets"
 if command -v gcloud >/dev/null 2>&1; then
-  if gcloud auth application-default print-access-token >/dev/null 2>&1; then
-    printf '  \033[32mok\033[0m       %-12s %s\n' "ADC" "application default credentials work"
+  account="$(gcloud config get-value account 2>/dev/null)"
+  if [[ -n "${account}" ]]; then
+    printf '  \033[32mok\033[0m       %-12s %s\n' "account" "gcloud signed in as ${account}"
   else
-    printf '  \033[33mcheck\033[0m    %-12s %s\n' "ADC" "run: gcloud auth application-default login"
+    printf '  \033[33mcheck\033[0m    %-12s %s\n' "account" "run: gcloud auth login"
   fi
 fi
 log "Optional"

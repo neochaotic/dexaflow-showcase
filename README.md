@@ -11,6 +11,9 @@ installed with Helm). Examples for **Dexaflow Lite** (single host) will follow.
 > Dexaflow is pre-1.0. This repository pins the version it was tested with in
 > [`versions.env`](versions.env).
 
+> **New here?** [LAB.md](LAB.md) is a copy-and-paste lab: GKE cluster, Dexaflow
+> Pro, your first DAGs and two BigQuery labs, in about an hour.
+
 ## Pick your path
 
 | Path | You need | You get |

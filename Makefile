@@ -3,13 +3,16 @@ SHELL := /usr/bin/env bash
 SCRIPTS := pro/scripts
 USE_CASE ?= all
 
-.PHONY: help doctor dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-demo gke-lab gke-down
+.PHONY: help cli doctor dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-info gke-demo gke-lab gke-down
 
 help: ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
 doctor: ## Check that the tools this repo needs are installed
 	@bash $(SCRIPTS)/doctor.sh
+
+cli: ## Install the pinned Dexaflow CLI into ~/.dexaflow/bin
+	@bash $(SCRIPTS)/install-cli.sh
 
 dry-run: ## Validate every DAG and render every manifest, no cluster needed
 	@bash $(SCRIPTS)/dry-run.sh
@@ -37,6 +40,9 @@ gke-deploy: ## Install or upgrade Dexaflow Pro on the GKE demo environment
 
 gke-ui: ## Forward the GKE UI to http://localhost:8081
 	@source versions.env && kubectl -n $$NAMESPACE port-forward svc/$$RELEASE $$GKE_UI_PORT:8080
+
+gke-info: ## Print the GKE UI address, login user and where the password is
+	@bash pro/platform/gke/info.sh
 
 gke-demo: ## Build, register and trigger the use cases on GKE (needs make gke-ui running)
 	@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/demo.sh $(USE_CASE)
