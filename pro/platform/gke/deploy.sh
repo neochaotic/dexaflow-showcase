@@ -71,5 +71,6 @@ run helm upgrade --install "${RELEASE}" "${DEXAFLOW_CHART}" --version "${DEXAFLO
 # operators, not for this lab; they stay in the log.
 
 ok "Dexaflow Pro ${DEXAFLOW_VERSION} is running on ${GKE_CLUSTER}"
+log "The UI is not reachable yet: the next command opens it."
 next "make gke-ui    (opens the UI in the background)"
 next "make gke-info  (shows how to sign in)"

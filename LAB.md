@@ -222,6 +222,7 @@ runs: 2 to 5 minutes with no output.
 
 ```
 ✔ Dexaflow Pro 0.5.3 is running on dexaflow-showcase
+==> The UI is not reachable yet: the next command opens it.
    Next: make gke-ui    (opens the UI in the background)
    Next: make gke-info  (shows how to sign in)
 ```
