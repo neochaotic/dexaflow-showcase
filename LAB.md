@@ -533,6 +533,7 @@ gcloud container clusters list
 | `make gke-up` fails on an API or IAM step | You need Owner (or Editor plus Project IAM Admin) on the project. |
 | `run 'make gke-up' first` | Run Task 3 in this clone; it is safe to repeat. |
 | Cloud Shell shows *Unable to forward your request to a backend ... port 8080* | Web Preview opened 8080; use **Change port** and `8081`, or replace the leading `8080-` in the preview URL with `8081-`. |
+| The UI already lists DAGs you did not deploy | `make gke-up` reused an existing cluster in your project (it says so in yellow). `make gke-reset` empties its database. |
 | `curl` prints `000` | The UI port-forward is not running: `make gke-ui`. |
 | `invalid credentials` | The user is `admin@leoflow.local`, not `admin`. |
 | `no Dexaflow server at http://localhost:8081` | The UI port-forward is not running: `make gke-ui` (its log is `.out/gke-ui.log`). |

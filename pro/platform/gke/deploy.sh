@@ -17,6 +17,8 @@ run kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl a
 # instead of generating new ones (which would reset Postgres and the login).
 CREDS_SECRET=showcase-credentials
 if [[ ! -f "${GKE_SECRETS}" ]] && kubectl -n "${NAMESPACE}" get secret "${CREDS_SECRET}" >/dev/null 2>&1; then
+  warn "Dexaflow is already installed on this cluster: reusing its database and login."
+  warn "Existing DAGs and runs stay. For an empty Dexaflow: make gke-reset."
   log "Restoring credentials from the cluster into .out/gke-secrets.yaml"
   (umask 077; kubectl -n "${NAMESPACE}" get secret "${CREDS_SECRET}" \
     -o jsonpath='{.data.values\.yaml}' | base64 --decode > "${GKE_SECRETS}")

@@ -34,6 +34,9 @@ if ! gcloud container clusters describe "${GKE_CLUSTER}" --zone "${GKE_ZONE}" \
     --disk-type pd-standard --disk-size 50 \
     --workload-pool "${GCP_PROJECT}.svc.id.goog" \
     --enable-dataplane-v2
+else
+  warn "Cluster ${GKE_CLUSTER} already exists in ${GCP_PROJECT}: reusing it."
+  warn "Whatever is deployed on it stays (DAGs, runs). For an empty Dexaflow: make gke-reset."
 fi
 run gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}"
 
