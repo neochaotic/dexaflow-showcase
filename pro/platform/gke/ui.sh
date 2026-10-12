@@ -44,6 +44,11 @@ fi
 ok "UI on ${URL}"
 log "It runs in the background, so this terminal stays free (stop it with: make gke-ui-stop)"
 if [[ -n "${CLOUD_SHELL:-}" ]]; then
-  next "Cloud Shell: Web Preview > Change port > ${GKE_UI_PORT} (not the default 8080)"
+  preview="$(cloudshell get-web-preview-url -p "${GKE_UI_PORT}" 2>/dev/null || true)"
+  if [[ -n "${preview}" ]]; then
+    next "Cloud Shell: open ${preview}"
+  else
+    next "Cloud Shell: Web Preview > Change port > ${GKE_UI_PORT} (not the default 8080)"
+  fi
 fi
 next "make gke-info  (shows how to sign in)"

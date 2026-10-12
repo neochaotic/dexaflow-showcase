@@ -271,8 +271,9 @@ The password is the text after **`password:`**.
 Then open the UI and sign in as **`admin@leoflow.local`** with that password:
 
 - **Your own machine:** open <http://localhost:8081>.
-- **Cloud Shell:** click **Web Preview** (a button at the top right of the
-  terminal panel) > **Change port**, type **`8081`**, then **Change and Preview**.
+- **Cloud Shell:** open the address that `make gke-ui` prints after
+  **Cloud Shell: open**. If it printed none, click **Web Preview** (a button
+  at the top right of the terminal panel) > **Change port**, type **`8081`**, then **Change and Preview**.
   The default *Preview on port 8080* shows *Unable to forward your request to a
   backend*. If you landed there, change the start of the address from `8080-`
   to **`8081-`** and reload.
