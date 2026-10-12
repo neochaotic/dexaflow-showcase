@@ -9,14 +9,18 @@ if [[ -x "${BIN_DIR}/dexaflow" ]] && "${BIN_DIR}/dexaflow" version 2>/dev/null |
   log "Dexaflow CLI ${DEXAFLOW_VERSION} already installed in ${BIN_DIR}"
 else
   log "Installing Dexaflow CLI ${DEXAFLOW_VERSION} into ${BIN_DIR}"
+  mkdir -p "${REPO_ROOT}/.out"
+  # The upstream installer ends with Lite-oriented next steps; keep its output in a log.
   curl -fsSL "https://raw.githubusercontent.com/dexadata/dexaflow/v${DEXAFLOW_VERSION}/install.sh" \
     | DEXAFLOW_VERSION="v${DEXAFLOW_VERSION}" DEXAFLOW_INSTALL_DIR="${BIN_DIR}" \
-      DEXAFLOW_NO_SETUP=1 DEXAFLOW_NO_PATH=1 sh
+      DEXAFLOW_NO_SETUP=1 DEXAFLOW_NO_PATH=1 sh >"${REPO_ROOT}/.out/dexaflow-install.log" 2>&1 \
+    || { cat "${REPO_ROOT}/.out/dexaflow-install.log" >&2; die "Dexaflow CLI install failed"; }
 fi
 # `dexaflow setup` prepares the Python runtime that parses dag.py. Its output is
 # about Dexaflow Lite, so keep it in a log and show it only on failure.
 mkdir -p "${REPO_ROOT}/.out"
-log "Preparing the DAG parser runtime (dexaflow setup, log in .out/dexaflow-setup.log)"
+log "Preparing the DAG parser runtime. The first time it downloads Python and"
+log "takes a few minutes; follow it with: tail -f .out/dexaflow-setup.log"
 "${BIN_DIR}/dexaflow" setup >"${REPO_ROOT}/.out/dexaflow-setup.log" 2>&1 \
   || { cat "${REPO_ROOT}/.out/dexaflow-setup.log" >&2; die "dexaflow setup failed"; }
 log "Done. Add it to this shell with: export PATH=\"\$HOME/.dexaflow/bin:\$PATH\""

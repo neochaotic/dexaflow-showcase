@@ -83,6 +83,10 @@ make cli
 export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
 
+The first `make cli` takes a few minutes: it downloads a Python runtime with
+no output on screen. To watch it, run `tail -f .out/dexaflow-setup.log` in
+another tab.
+
 `make cli` installs the Dexaflow CLI version pinned in
 [`versions.env`](versions.env), plus the small Python runtime it uses to
 read `dag.py` files.
