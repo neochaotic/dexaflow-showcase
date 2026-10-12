@@ -42,7 +42,7 @@ gke-deploy: ## Install or upgrade Dexaflow Pro on the GKE demo environment
 	@bash pro/platform/gke/deploy.sh
 
 gke-ui: ## Forward the GKE UI to http://localhost:8081
-	@source versions.env && kubectl -n $$NAMESPACE port-forward svc/$$RELEASE $$GKE_UI_PORT:8080
+	@source versions.env && if [[ -n "$${CLOUD_SHELL:-}" ]]; then echo "Cloud Shell: open it with Web Preview > Change port > $$GKE_UI_PORT (not the default 8080)"; fi && kubectl -n $$NAMESPACE port-forward svc/$$RELEASE $$GKE_UI_PORT:8080
 
 gke-info: ## Print the GKE UI address, login user and where the password is
 	@bash pro/platform/gke/info.sh

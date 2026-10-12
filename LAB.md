@@ -213,7 +213,7 @@ make gke-info
 
 Open `.out/gke-secrets.yaml` in an editor (Cloud Shell: **Open Editor**) and
 copy the value of `password:` under `bootstrap:`. Then open
-<http://localhost:8081> (Cloud Shell: **Web Preview > Change port > 8081**) and
+<http://localhost:8081> (Cloud Shell: **Web Preview > Change port**, type `8081`, **Change and Preview**; the default "Preview on port 8080" shows *Unable to forward your request to a backend*) and
 sign in.
 
 **Check your progress**
@@ -540,6 +540,7 @@ gcloud container clusters list --project "$GCP_PROJECT"
 | `no GCP project` | Task 2 was not run in this terminal. |
 | `make gke-up` fails on an API or IAM step | You need Owner (or Editor plus Project IAM Admin) on the project. |
 | `run 'make gke-up' first` | Run Task 3 in this clone; it is safe to repeat. |
+| Cloud Shell shows *Unable to forward your request to a backend ... port 8080* | Web Preview opened 8080; use **Change port** and `8081`, or replace the leading `8080-` in the preview URL with `8081-`. |
 | `curl` prints `000` | `make gke-ui` is not running in the second terminal. |
 | `invalid credentials` | The user is `admin@leoflow.local`, not `admin`. |
 | `no Dexaflow server at http://localhost:8081` | `make gke-ui` is not running in the second terminal. |
