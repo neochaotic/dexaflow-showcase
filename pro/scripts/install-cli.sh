@@ -19,8 +19,10 @@ fi
 # `dexaflow setup` prepares the Python runtime that parses dag.py. Its output is
 # about Dexaflow Lite, so keep it in a log and show it only on failure.
 mkdir -p "${REPO_ROOT}/.out"
-log "Preparing the DAG parser runtime. The first time it downloads Python and"
-log "takes a few minutes; follow it with: tail -f .out/dexaflow-setup.log"
-"${BIN_DIR}/dexaflow" setup >"${REPO_ROOT}/.out/dexaflow-setup.log" 2>&1 \
+log "Preparing the DAG parser runtime (downloads Python 3.11 if this machine has none;"
+log "can take a minute or two, log in .out/dexaflow-setup.log)"
+# stdin from /dev/null: setup asks questions (workspace folder) and takes the
+# defaults when nobody can answer, instead of waiting on a hidden prompt.
+"${BIN_DIR}/dexaflow" setup </dev/null >"${REPO_ROOT}/.out/dexaflow-setup.log" 2>&1 \
   || { cat "${REPO_ROOT}/.out/dexaflow-setup.log" >&2; die "dexaflow setup failed"; }
 log "Done. Add it to this shell with: export PATH=\"\$HOME/.dexaflow/bin:\$PATH\""
