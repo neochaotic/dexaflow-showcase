@@ -3,7 +3,8 @@
 # below; this folder only holds your DAGs, so you can version it on its own.
 SHELL := /usr/bin/env bash
 SHOWCASE ?= __SHOWCASE__
-TARGET ?= gke
+# Empty: GKE when the platform clone has a GKE environment, else local.
+TARGET ?=
 .PHONY: help new deploy deploy-all list
 
 help: ## Show this help

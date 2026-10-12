@@ -17,7 +17,7 @@ tables into your own dataset, so you can break things freely.
 
 Follow Part 1 of [LAB.md](../../LAB.md#part-1-set-up-gke-and-dexaflow-pro): it
 creates the GKE cluster and Dexaflow Pro in your project, step by step, and
-leaves `make gke-ui` running with the UI on <http://localhost:8081>.
+opens the UI on <http://localhost:8081> with `make gke-ui`.
 
 ## 2. Set your variables
 

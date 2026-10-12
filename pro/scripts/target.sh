@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# Resolves where DAGs go: the local k3d cluster (default) or GKE
-# (DEXAFLOW_TARGET=gke), signs in, and exports SERVER, REGISTRY and the token.
-# Sourced by deploy-dags.sh and demo.sh.
+# Resolves where DAGs go: GKE when this clone has a GKE environment
+# (.out/gke.env, written by make gke-up), else the local k3d cluster.
+# DEXAFLOW_TARGET=local|gke overrides it. Signs in and exports SERVER,
+# REGISTRY and the token. Sourced by deploy-dags.sh and demo.sh.
 
-if [[ "${DEXAFLOW_TARGET:-local}" == "gke" ]]; then
+if [[ -z "${DEXAFLOW_TARGET:-}" ]]; then
+  if [[ -f "${REPO_ROOT}/.out/gke.env" ]]; then DEXAFLOW_TARGET=gke; else DEXAFLOW_TARGET=local; fi
+fi
+log "Target: ${DEXAFLOW_TARGET} (set DEXAFLOW_TARGET=local or gke to choose)"
+if [[ "${DEXAFLOW_TARGET}" == "gke" ]]; then
   [[ -f "${REPO_ROOT}/.out/gke.env" ]] || die "run 'make gke-up gke-deploy' first"
   # shellcheck disable=SC1091
   source "${REPO_ROOT}/.out/gke.env"
@@ -14,7 +19,7 @@ REGISTRY="${DEXAFLOW_REGISTRY:-${REGISTRY_NAME}:${REGISTRY_PORT}}"
 PASSWORD="${DEXAFLOW_PASSWORD:-showcase-admin}"
 
 curl -fsS "${SERVER}/readyz" >/dev/null 2>&1 \
-  || die "no Dexaflow server at ${SERVER} (for GKE, keep 'make gke-ui' running in another terminal)"
+  || die "no Dexaflow server at ${SERVER} (for GKE, run 'make gke-ui' first)"
 
 log "Signing in to ${SERVER} as ${ADMIN_EMAIL}"
 DEXAFLOW_TOKEN="$(printf '%s' "${PASSWORD}" | dexaflow auth create-token \

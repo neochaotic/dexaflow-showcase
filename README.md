@@ -63,7 +63,7 @@ make new NAME=my_first_dag                # scaffolds dags/my_first_dag
 make deploy DAG=dags/my_first_dag         # build, push, register (TRIGGER=1 to also run it)
 ```
 
-The workspace deploys to GKE by default; `make deploy TARGET=local ...` targets the local cluster. Inside this repo, `make new-dag` and `make deploy` still work on `my-dags/`.
+The workspace deploys to GKE when this clone has a GKE environment, else to the local cluster; `make deploy TARGET=local ...` or `TARGET=gke` chooses. Inside this repo, `make new-dag` and `make deploy` still work on `my-dags/`.
 
 ## Labs
 

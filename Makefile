@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 SCRIPTS := pro/scripts
 USE_CASE ?= all
 
-.PHONY: help cli doctor workspace dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-info gke-demo gke-lab gke-down
+.PHONY: help cli doctor workspace dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-ui-stop gke-info gke-demo gke-lab gke-down
 
 help: ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -21,7 +21,7 @@ up: ## Create the local k3d cluster and install Dexaflow Pro on it
 	@bash $(SCRIPTS)/up.sh
 
 demo: ## Build, register and trigger the use cases (USE_CASE=01-hello-pipeline for one)
-	@bash $(SCRIPTS)/demo.sh $(USE_CASE)
+	@DEXAFLOW_TARGET=$${DEXAFLOW_TARGET:-local} bash $(SCRIPTS)/demo.sh $(USE_CASE)
 
 deploy: ## Build, push and register the DAGs under DAG=<path> (TRIGGER=1 to also run them)
 	@bash $(SCRIPTS)/deploy-dags.sh $(DAG)
@@ -41,13 +41,17 @@ gke-up: ## Provision the GKE demo environment (needs gcloud, see docs/gke.md)
 gke-deploy: ## Install or upgrade Dexaflow Pro on the GKE demo environment
 	@bash pro/platform/gke/deploy.sh
 
-gke-ui: ## Forward the GKE UI to http://localhost:8081
-	@source versions.env && if [[ -n "$${CLOUD_SHELL:-}" ]]; then echo "Cloud Shell: open it with Web Preview > Change port > $$GKE_UI_PORT (not the default 8080)"; fi && kubectl -n $$NAMESPACE port-forward svc/$$RELEASE $$GKE_UI_PORT:8080
+gke-ui: ## Open the GKE UI on http://localhost:8081, in the background
+	@bash pro/platform/gke/ui.sh
+
+gke-ui-stop: ## Stop the background GKE UI port-forward
+	@bash pro/platform/gke/ui.sh stop
+
 
 gke-info: ## Print the GKE UI address, login user and where the password is
 	@bash pro/platform/gke/info.sh
 
-gke-demo: ## Build, register and trigger the use cases on GKE (needs make gke-ui running)
+gke-demo: ## Build, register and trigger the use cases on GKE (needs make gke-ui)
 	@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/demo.sh $(USE_CASE)
 
 gke-lab: ## Deploy every lab on GKE, run the BigQuery lab setup and one medallion day

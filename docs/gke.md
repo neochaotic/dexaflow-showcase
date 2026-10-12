@@ -20,7 +20,7 @@ gcloud config set project <your-project>
 
 make gke-up       # APIs, Artifact Registry, cluster, Workload Identity
 make gke-deploy   # Postgres, Redis and Dexaflow Pro on the cluster
-make gke-ui       # in a second terminal: UI on http://localhost:8081
+make gke-ui       # UI on http://localhost:8081, in the background (make gke-ui-stop)
 make gke-demo     # build, push, register and trigger every use case
 make gke-info     # UI address, user, and where the password is
 make gke-lab      # deploy both labs, run the BigQuery lab setup and one medallion day

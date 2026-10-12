@@ -64,6 +64,6 @@ run helm upgrade --install "${RELEASE}" "${DEXAFLOW_CHART}" --version "${DEXAFLO
   --set-string "taskServiceAccount.annotations.iam\.gke\.io/gcp-service-account=${TASK_GSA}" \
   --wait --timeout 10m
 
-log "Deployed. Open the UI with: make gke-ui   (then http://localhost:${GKE_UI_PORT})"
+log "Deployed. Open the UI with: make gke-ui"
 log "Show the UI address and login with: make gke-info"
 log "Run the demos with: make gke-demo"
