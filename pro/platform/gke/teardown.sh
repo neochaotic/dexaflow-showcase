@@ -13,6 +13,13 @@ read -r answer
 
 bash "$(dirname "$0")/ui.sh" stop
 
+# Delete the namespace first, so GKE deletes the persistent disk behind the
+# chart's log volume; deleting only the cluster leaves that disk billing.
+if gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}" \
+    --project "${GCP_PROJECT}" >/dev/null 2>&1; then
+  log "Deleting namespace ${NAMESPACE} and its volumes"
+  run kubectl delete namespace "${NAMESPACE}" --ignore-not-found --wait --timeout=5m || true
+fi
 slow "Deleting the cluster takes about 5 minutes"
 run gcloud container clusters delete "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" --quiet || true
 run gcloud artifacts repositories delete "${AR_REPO}" --location "${GKE_REGION}" --project "${GCP_PROJECT}" --quiet || true
