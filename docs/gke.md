@@ -1,5 +1,8 @@
 # GKE
 
+> To set it up step by step, follow Part 1 of [the lab](../LAB.md#part-1-set-up-gke-and-dexaflow-pro).
+> This page is the reference: what gets created, what it costs, and how production differs.
+
 The presentation environment. Same chart, same DAGs, plus the BigQuery use
 cases, authenticated with Workload Identity (no service account keys).
 
@@ -9,7 +12,7 @@ A zonal GKE Standard cluster on Spot `e2-standard-2` nodes (2 vCPU, 8 GB), autos
 an Artifact Registry repository and a few cheap BigQuery queries (each capped at
 1 GB billed). Run `make gke-down` after the talk to stop all cost.
 
-## Steps
+## Commands
 
 ```bash
 gcloud auth login
@@ -27,7 +30,7 @@ make gke-lab      # deploy the BigQuery lab (labs/bigquery)
 `showcase-credentials`, so a second clone reuses it instead of resetting the
 database. `make gke-info` shows the UI address, the user and where the password is.
 
-For a guided, copy-and-paste version of these steps, follow [LAB.md](../LAB.md).
+
 
 ## What `make gke-up` creates
 

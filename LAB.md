@@ -1,52 +1,80 @@
-# Lab: Airflow DAGs on Dexaflow Pro and GKE
+# Lab: Dexaflow Pro on GKE
 
-Copy, paste, run. Every task ends with a **Check your progress** command and
-the result you should see.
+Copy, paste, run. You build a Dexaflow Pro environment in your own Google Cloud
+project, then write, deploy and change Airflow DAGs on it, including BigQuery
+pipelines that run without any key file.
 
-| | |
-|---|---|
-| Time | about 60 minutes, most of it waiting for the cluster and the first image builds |
-| Level | introductory; you know what an Airflow DAG is |
-| Cost | one Spot `e2-standard-2` node, a small Artifact Registry repository and a few BigQuery jobs, each capped at 1 GB billed. Task 12 deletes everything. |
+Every task ends with a **Check your progress** command and the result you
+should see. If what you see differs, see [Troubleshooting](#troubleshooting).
 
-## Overview
+## The path
 
-[Dexaflow](https://github.com/dexadata/dexaflow) runs Airflow 3 DAGs with a Go
-control plane, the unmodified Airflow 3.2 UI and one container image per DAG.
-In this lab you install Dexaflow Pro on a small GKE cluster in your own
-project, then write, deploy and change DAGs the way you would in Airflow,
-including BigQuery pipelines that authenticate without any key.
+| Part | You will | Time |
+|---|---|---|
+| [1. Set up GKE and Dexaflow Pro](#part-1-set-up-gke-and-dexaflow-pro) | install the CLI, create the cluster, install Dexaflow Pro, open the Airflow UI | 20 min |
+| [2. Write and deploy DAGs](#part-2-write-and-deploy-dags) | deploy a DAG, write your own, add a dependency and redeploy | 15 min |
+| [3. BigQuery pipelines](#part-3-bigquery-pipelines) | query BigQuery keylessly, run a daily ELT and a 4 million event medallion pipeline | 20 min |
+| [4. Clean up](#part-4-clean-up) | delete everything the lab created | 5 min |
 
-### What you will do
+Do the parts in order: each one starts where the previous one ended. Part 1 is
+the only long wait (about 8 minutes for the cluster).
 
-- Create a GKE cluster and install Dexaflow Pro with Helm.
-- Deploy a DAG, write your own, add a Python dependency and redeploy it.
-- Run BigQuery jobs keylessly through Workload Identity.
-- Run a daily ELT lab and a medallion lab that generates 4 million events with DuckDB.
+## Before you start
 
-## Setup and requirements
+- A Google Cloud project with billing enabled, where you have the **Owner**
+  role (or Editor plus Project IAM Admin).
+- A terminal: [Cloud Shell](https://shell.cloud.google.com/) has every tool
+  already, or use your own macOS or Linux machine ([Part 1](#part-1-set-up-gke-and-dexaflow-pro) lists what to install).
+- Basic Airflow knowledge: what a DAG and a task are.
 
-You need a Google Cloud project with billing enabled, and the **Owner** role on
-it (or Editor plus Project IAM Admin). The lab creates everything it uses and
-deletes it at the end.
+## What it costs
 
-### Option A: Cloud Shell
+One Spot `e2-standard-2` node (the cluster can grow to 3 under load), the GKE
+cluster fee, a small Artifact Registry repository and a few BigQuery jobs, each
+capped at 1 GB billed. Running the whole lab in one sitting costs a few US
+dollars at most. [Part 4](#part-4-clean-up) stops all cost; do it even if you stop
+halfway.
 
-[Open Cloud Shell](https://shell.cloud.google.com/). It already has `gcloud`,
-`kubectl`, `helm`, `docker`, `make` and `bq`, and is signed in as you. To open
-the UI in Task 5 you will use **Web Preview > Change port > 8081**.
+## What you will build
 
-### Option B: your own terminal (macOS or Linux)
+```
+your terminal                     GKE cluster "dexaflow-showcase"
+-------------                     -------------------------------
+make deploy DAG=...  ── image ──▶ Artifact Registry
+                     ── dag.json ▶ Dexaflow control plane (Airflow 3.2 UI, API, scheduler)
+make gke-ui ◀─── port-forward ───   │  Postgres, Redis (in the cluster)
+                                    ▼
+                                  one pod per task ── Workload Identity ──▶ BigQuery
+```
 
-Install `gcloud` (with the `gke-gcloud-auth-plugin` and `bq` components),
-`kubectl`, `helm` 3.16+, Docker and `make`. Then sign in:
+For how the environment is built and how production differs, see [docs/gke.md](docs/gke.md).
+
+## Part 1. Set up GKE and Dexaflow Pro
+
+About 20 minutes, 8 of them waiting for the cluster. At the end you have
+Dexaflow Pro running on GKE and the Airflow UI open in your browser.
+
+### Choose where to run the commands
+
+**Option A: Cloud Shell.** [Open Cloud Shell](https://shell.cloud.google.com/).
+It already has `gcloud`, `kubectl`, `helm`, `docker`, `make` and `bq`, and is
+signed in as you. Go to [Task 1](#task-1-get-the-code-and-the-dexaflow-cli).
+
+**Option B: your own terminal (macOS or Linux).** Install
+[`gcloud`](https://cloud.google.com/sdk/docs/install),
+[`kubectl`](https://kubernetes.io/docs/tasks/tools/),
+[`helm`](https://helm.sh/docs/intro/install/) 3.16+,
+[Docker](https://docs.docker.com/get-docker/) and `make`, then:
 
 ```bash
 gcloud auth login
-gcloud components install gke-gcloud-auth-plugin bq   # skip if you installed them another way
+gcloud components install gke-gcloud-auth-plugin bq
 ```
 
-## Task 1. Get the code and the Dexaflow CLI
+(If you installed `gcloud` with a package manager, install those two
+components with it instead.)
+
+### Task 1. Get the code and the Dexaflow CLI
 
 ```bash
 git clone https://github.com/neochaotic/dexaflow-showcase.git
@@ -55,8 +83,9 @@ make cli
 export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
 
-`make cli` installs the CLI version pinned in [`versions.env`](versions.env),
-plus the small Python runtime it uses to read `dag.py` files.
+`make cli` installs the Dexaflow CLI version pinned in
+[`versions.env`](versions.env), plus the small Python runtime it uses to
+read `dag.py` files.
 
 **Check your progress**
 
@@ -65,25 +94,29 @@ dexaflow version
 make doctor
 ```
 
-`dexaflow version` prints the pinned version (`0.5.2`). `make doctor` shows
-`ok` for `dexaflow`, `helm`, `docker`, `kubectl`, `curl`, `gcloud`,
-`gke-gcloud-auth-plugin` and `bq`. (`k3d` is only for the local path; ignore it.)
+`dexaflow version` prints `0.5.2`. `make doctor` prints `ok` for every tool
+except `k3d` (only needed for the local path) and shows the account you are
+signed in with.
 
-## Task 2. Point the lab at your project
+### Task 2. Point the lab at your project
 
-Replace `my-project-id` with your project id. Run these in every new terminal
-you open for this lab.
+Replace `my-project-id` with your project id:
 
 ```bash
-cd dexaflow-showcase   # skip if you are already there
 export GCP_PROJECT=my-project-id
 export DEXAFLOW_TARGET=gke
-export PATH="$HOME/.dexaflow/bin:$PATH"
 gcloud config set project "$GCP_PROJECT"
 ```
 
-`DEXAFLOW_TARGET=gke` makes `make deploy` send DAGs to the GKE environment
-instead of a local cluster.
+`DEXAFLOW_TARGET=gke` makes `make deploy` send DAGs to GKE instead of a local
+cluster.
+
+> **Every new terminal** you open for this lab needs these lines first:
+>
+> ```bash
+> cd dexaflow-showcase
+> export GCP_PROJECT=my-project-id DEXAFLOW_TARGET=gke PATH="$HOME/.dexaflow/bin:$PATH"
+> ```
 
 **Check your progress**
 
@@ -93,13 +126,14 @@ gcloud config get-value project
 
 It prints your project id.
 
-## Task 3. Create the GKE cluster
+### Task 3. Create the GKE cluster
 
 ```bash
 make gke-up
 ```
 
-This enables the APIs, then creates:
+The script prints every command it runs with a `$` in front, so you can see
+exactly what it does. It enables the APIs, then creates:
 
 | Resource | Name | Why |
 |---|---|---|
@@ -108,9 +142,8 @@ This enables the APIs, then creates:
 | Service account | `dexaflow-tasks` | identity of the task pods, with BigQuery job and data access |
 | Workload Identity binding | `dexaflow/dexaflow-task` | task pods act as `dexaflow-tasks` with no key file |
 
-Creating the cluster takes about 8 minutes. Every command the script runs is
-printed with a `$` in front, so you can see exactly what it does. Running it
-again is safe: it skips what already exists.
+Creating the cluster takes about 8 minutes. Running `make gke-up` again is safe:
+it skips what already exists.
 
 **Check your progress**
 
@@ -118,18 +151,24 @@ again is safe: it skips what already exists.
 kubectl get nodes
 ```
 
-One node with `STATUS` `Ready`.
+```
+NAME                                         STATUS   ROLES    AGE   VERSION
+gke-dexaflow-showcase-default-pool-...       Ready    <none>   2m    v1.3x...
+```
 
-## Task 4. Install Dexaflow Pro
+One node, `Ready`.
+
+### Task 4. Install Dexaflow Pro
 
 ```bash
 make gke-deploy
 ```
 
-This installs Postgres and Redis inside the cluster (enough for a demo; use
-Cloud SQL and Memorystore in production), then the Dexaflow Pro Helm chart.
-It generates the admin password into `.out/gke-secrets.yaml`, which git
-ignores, and keeps a copy in the cluster so another clone can reuse it.
+This runs Postgres and Redis inside the cluster (enough for a lab; production
+uses Cloud SQL and Memorystore, see [docs/gke.md](docs/gke.md)), then installs the
+Dexaflow Pro Helm chart. It generates an admin password into
+`.out/gke-secrets.yaml`, which git ignores, and keeps a copy in the cluster so
+another clone of the repo reuses it.
 
 **Check your progress**
 
@@ -137,12 +176,14 @@ ignores, and keeps a copy in the cluster so another clone can reuse it.
 kubectl -n dexaflow get pods
 ```
 
-The `dexaflow`, `postgres` and `redis` pods are `Running` and `1/1` ready.
+The `dexaflow-...`, `postgres-...` and `redis-...` pods show `1/1` and
+`Running`.
 
-## Task 5. Open the Airflow UI
+### Task 5. Open the Airflow UI
 
-The UI is not exposed to the internet. Open a **second terminal**, repeat
-Task 2 there, then leave this running:
+The UI is not exposed to the internet; you reach it through a port-forward.
+Open a **second terminal**, run the "every new terminal" lines from Task 2,
+then leave this running:
 
 ```bash
 make gke-ui
@@ -154,47 +195,66 @@ Back in the first terminal:
 make gke-info
 ```
 
-It prints the address, the user (`admin@leoflow.local`) and where the password
-is. Open `.out/gke-secrets.yaml` and copy the value of `password:` under
-`bootstrap:`. Then open <http://localhost:8081> (in Cloud Shell: **Web Preview >
-Change port > 8081**) and sign in.
+```
+  UI        http://localhost:8081   (keep 'make gke-ui' running)
+  user      admin@leoflow.local
+  password  the 'bootstrap.password' value in .out/gke-secrets.yaml
+  ...
+```
+
+Open `.out/gke-secrets.yaml` in an editor (Cloud Shell: **Open Editor**) and
+copy the value of `password:` under `bootstrap:`. Then open
+<http://localhost:8081> (Cloud Shell: **Web Preview > Change port > 8081**) and
+sign in.
 
 **Check your progress**
 
 ```bash
-curl -s http://localhost:8081/readyz && echo
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8081/readyz
 ```
 
-It prints a ready response, and the browser shows the Airflow 3.2 UI with no
-DAGs yet.
+It prints `200`, and the browser shows the Airflow 3.2 UI, with no DAGs yet.
 
-## Task 6. Deploy your first DAG
+## Part 2. Write and deploy DAGs
 
-[`use-cases/01-hello-pipeline/dag.py`](use-cases/01-hello-pipeline/dag.py) is a
-plain Airflow 3 DAG: three TaskFlow tasks passing data through XCom.
+About 15 minutes. You deploy an existing DAG, write your own, then change it the
+way you would change any Airflow DAG.
+
+> New terminal? Run the "every new terminal" lines from [Task 2](#task-2-point-the-lab-at-your-project) first.
+
+### Task 6. Deploy your first DAG
+
+[`use-cases/01-hello-pipeline/dag.py`](use-cases/01-hello-pipeline/dag.py)
+is a plain Airflow 3 DAG: three TaskFlow tasks passing data through XCom.
+Nothing in it is specific to Dexaflow.
 
 ```bash
 make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
 ```
 
-For each DAG, `make deploy` runs the whole Dexaflow loop, printing each command:
+`make deploy` runs the whole Dexaflow loop and prints each command:
 
-1. `dexaflow compile ... --build --push`: reads `dag.py`, writes `dag.json`,
+1. `dexaflow compile ... --build --push` reads `dag.py`, writes `dag.json`,
    builds an image with only this DAG's dependencies and pushes it to Artifact
-   Registry. No Dockerfile to write.
-2. `dexaflow push`: registers `dag.json` with the control plane. The DAG appears
+   Registry. You never write a Dockerfile.
+2. `dexaflow push` registers `dag.json` with the control plane. The DAG appears
    in the UI.
-3. With `TRIGGER=1`, starts a run and waits for it.
+3. `TRIGGER=1` starts a run and waits for it to finish.
 
 **Check your progress**
 
-The command ends with `success  showcase_hello_pipeline`. In the UI, open the
-DAG, then the run: each task ran in its own pod. Click `load` and open **XCom**
-to see the summary it returned.
+The command ends with:
 
-## Task 7. Write your own DAG
+```
+  success  showcase_hello_pipeline
+```
 
-Scaffold a new DAG project, then replace its `dag.py`:
+In the UI, open `showcase_hello_pipeline` and its run. Each task ran in its own
+pod. Click `load`, then **XCom**, to see the summary it returned.
+
+### Task 7. Write your own DAG
+
+Scaffold a DAG project, replace its `dag.py`, and deploy it:
 
 ```bash
 make new-dag NAME=my_first_dag
@@ -215,18 +275,18 @@ EOF
 make deploy DAG=my-dags/my_first_dag TRIGGER=1
 ```
 
-`my-dags/my_first_dag/dexaflow.yaml` is the build config: the DAG id, the
-Python version and the dependencies, which are none for now.
+A DAG project is two files. `dag.py` is the DAG. `dexaflow.yaml` is its build
+config: the DAG id, the Python version and the dependencies (none yet).
 
 **Check your progress**
 
-The command ends with `success  my_first_dag`, and `my_first_dag` is in the UI
-with one green run.
+The command ends with `success  my_first_dag`, and `my_first_dag` shows in the
+UI with one green run.
 
-## Task 8. Add a dependency and a task, then redeploy
+### Task 8. Add a dependency and a task, then redeploy
 
-Add [Faker](https://faker.readthedocs.io/) as a dependency of this DAG only, and
-a task that uses it:
+Add [Faker](https://faker.readthedocs.io/) to this DAG only, and a task that
+uses it:
 
 ```bash
 cat > my-dags/my_first_dag/dexaflow.yaml <<'EOF'
@@ -264,31 +324,55 @@ EOF
 make deploy DAG=my-dags/my_first_dag TRIGGER=1
 ```
 
-The new image has Faker; no other DAG does. This is how Dexaflow avoids the
-shared-environment dependency conflicts of a classic Airflow deployment. For
-two DAGs pinning different pandas versions side by side, run
-`make deploy DAG=use-cases/02-dependency-isolation TRIGGER=1`.
+Only this DAG's image has Faker. In a classic Airflow deployment every DAG
+shares one Python environment, so one DAG's dependency can break another.
 
 **Check your progress**
 
 The command ends with `success  my_first_dag`. In the UI the DAG now has two
 tasks, and the log of `greet` shows five generated names.
 
-## Task 9. Query BigQuery without a key
+### Task 9 (optional). Two pandas versions side by side
+
+[`use-cases/02-dependency-isolation`](use-cases/02-dependency-isolation/)
+has two DAGs, one pinned to pandas 1.5 on Python 3.11 and one to pandas 2.2 on
+Python 3.13. One shared Airflow environment cannot hold both.
+
+```bash
+make deploy DAG=use-cases/02-dependency-isolation TRIGGER=1
+```
+
+**Check your progress**
+
+```
+  success  legacy_pandas
+  success  modern_pandas
+```
+
+Each task log prints the pandas version it ran with.
+
+## Part 3. BigQuery pipelines
+
+About 20 minutes. Your DAGs query BigQuery with no key file: task pods use the
+`dexaflow-tasks` service account through Workload Identity. No DAG names your
+project; they read it from Airflow Variables.
+
+> New terminal? Run the "every new terminal" lines from [Task 2](#task-2-point-the-lab-at-your-project) first.
+
+### Task 10. Query BigQuery without a key
 
 [`use-cases/04-gcp-bigquery-report/dag.py`](use-cases/04-gcp-bigquery-report/dag.py)
-uses the stock Airflow BigQuery operators. It never names your project: it
-reads the `GCP_PROJECT` Variable.
+uses the stock Airflow BigQuery operators to build the top 5 US baby names per
+decade.
 
 ```bash
 make deploy DAG=use-cases/04-gcp-bigquery-report TRIGGER=1
 ```
 
 Before deploying, `make deploy` creates the `google_cloud_default` connection
-(with no key: the task pods use Workload Identity) and the `GCP_PROJECT` and
-`LAB_DATASET` Variables. See them in the UI under **Admin > Connections** and
-**Admin > Variables**. This first image build takes about 2 minutes because of
-the Google provider.
+(no key in it) and the `GCP_PROJECT` and `LAB_DATASET` Variables. See them in the
+UI under **Admin > Connections** and **Admin > Variables**. This first build
+takes about 2 minutes because of the Google provider packages.
 
 **Check your progress**
 
@@ -297,76 +381,111 @@ bq query --use_legacy_sql=false --project_id="$GCP_PROJECT" \
   'SELECT COUNT(*) AS row_count FROM dexaflow_showcase.top_names_by_decade'
 ```
 
-`row_count` is `60`: the top 5 US baby names in each of 12 decades.
+`row_count` is `60`: 5 names for each of 12 decades.
 
-## Task 10. Run the daily ELT lab
-
-[`labs/bigquery`](labs/bigquery/README.md) copies four tables of the public
-`thelook_ecommerce` dataset into your project, then builds a daily sales mart
-from them and checks it.
+### Task 11. Deploy the labs
 
 ```bash
 make gke-lab
 ```
 
-This deploys every lab DAG, then runs `lab_00_setup` (the copy) and one day of
-the medallion lab (Task 11), and waits for both. Now run one day of the ELT and
-its quality checks:
+This deploys four DAGs and runs two of them, then waits:
+
+| DAG | What it does | Runs now |
+|---|---|---|
+| [`lab_00_setup`](labs/bigquery/00-setup/dag.py) | copies four tables of the public `thelook_ecommerce` shop into `dexaflow_lab.raw_*` | yes |
+| [`lab_medallion_daily`](labs/medallion/medallion_daily/dag.py) | generates 4 million events with DuckDB, bronze to silver to gold (Task 13) | yes |
+| [`lab_01_daily_sales`](labs/bigquery/01-daily-sales/dag.py) | one day of orders into `stg_order_lines`, then `mart_daily_sales` | Task 12 |
+| [`lab_02_quality_checks`](labs/bigquery/02-quality-checks/dag.py) | `ASSERT` checks on the mart | Task 12 |
+
+**Check your progress**
+
+```
+  success  lab_00_setup
+  success  lab_medallion_daily
+```
+
+### Task 12. Run a daily ELT and its quality checks
 
 ```bash
 make deploy DAG=labs/bigquery/01-daily-sales TRIGGER=1
 make deploy DAG=labs/bigquery/02-quality-checks TRIGGER=1
 ```
 
+`lab_01_daily_sales` is `@daily` and processes only its own day (`{{ ds }}`), so
+running a day twice gives the same result.
+
+**Check your progress**
+
+Both commands end with `success`, then:
+
+```bash
+bq query --use_legacy_sql=false --project_id="$GCP_PROJECT" \
+  'SELECT table_id, row_count FROM dexaflow_lab.__TABLES__ WHERE table_id NOT LIKE "%events" AND table_id NOT LIKE "gold%" ORDER BY table_id'
+```
+
+You see `mart_daily_sales`, the four `raw_*` tables with thousands of rows each,
+and `stg_order_lines`.
+
+**Change a Variable, not the code.** In the UI, open **Admin > Variables**, set
+`LAB_DATASET` to `my_lab`, and trigger `lab_00_setup` again from the UI. It
+writes to the new dataset with no redeploy, because Variables are read at run
+time. Set it back to `dexaflow_lab` afterwards.
+
+### Task 13. Look at 4 million events
+
+`lab_medallion_daily` ran in Task 11. Its eight `generate_shard` tasks ran as
+eight pods at once; each generated 500,000 synthetic e-commerce events with
+DuckDB, wrote Parquet and loaded it into BigQuery. SQL tasks then refined them:
+
+| Layer | Table | Content |
+|---|---|---|
+| Bronze | `bronze_events` | events as generated, with about 2.5% duplicates and bad rows |
+| Silver | `silver_events` | deduplicated and cleaned, with `revenue` |
+| Gold | `gold_daily_sales`, `gold_funnel` | sales per country and category, conversion per channel |
+
+In the UI, open `lab_medallion_daily` and its run: the **Graph** shows the
+fan-out, the **Gantt** shows the eight shards running in parallel.
+
 **Check your progress**
 
 ```bash
 bq query --use_legacy_sql=false --project_id="$GCP_PROJECT" \
-  'SELECT table_id, row_count FROM dexaflow_lab.__TABLES__ ORDER BY table_id'
+  'SELECT table_id, row_count FROM dexaflow_lab.__TABLES__ WHERE table_id LIKE "%events" OR table_id LIKE "gold%" ORDER BY table_id'
 ```
 
-You see `raw_orders`, `raw_order_items`, `raw_products` and `raw_users` with
-thousands of rows each, plus `stg_order_lines` and `mart_daily_sales`. Both
-runs ended with `success`.
+`bronze_events` has `4000000` rows, `silver_events` about 3.9 million, and the
+two `gold_*` tables a few rows each.
 
-To change where the lab writes, change the Variable, not the code: in the UI
-open **Admin > Variables**, edit `LAB_DATASET`, and trigger the DAG again.
-Variables are read at run time, so no redeploy is needed.
+**Want more?** Choose **Trigger** on `lab_medallion_daily` in the UI and set
+`rows_per_shard` to `2500000` for 20 million events. Each lab's README has
+exercises: [BigQuery lab](labs/bigquery/README.md#exercises),
+[medallion lab](labs/medallion/README.md#exercises).
 
-## Task 11. Generate 4 million events with DuckDB
+## Part 4. Clean up
 
-[`labs/medallion`](labs/medallion/README.md) already ran in Task 10. Eight
-`generate_shard` tasks ran as eight pods at once; each generated 500,000
-synthetic e-commerce events with DuckDB and loaded them into BigQuery. SQL tasks
-then refined them into bronze, silver and gold tables, and `quality_checks`
-asserted the result.
+About 5 minutes. Do this even if you stopped halfway: the cluster costs money
+while it runs.
 
-In the UI, open `lab_medallion_daily` and look at the **Graph** and the
-**Gantt** of its run.
+### Task 14. Delete everything the lab created
 
-**Check your progress**
-
-```bash
-bq query --use_legacy_sql=false --project_id="$GCP_PROJECT" \
-  'SELECT table_id, row_count FROM dexaflow_lab.__TABLES__ WHERE table_id LIKE "bronze%" OR table_id LIKE "silver%" OR table_id LIKE "gold%" ORDER BY table_id'
-```
-
-`bronze_events` has `4000000` rows, `silver_events` a little fewer (duplicates
-and bad rows removed), and the two `gold_*` tables a few rows each.
-
-Want more volume? In the UI, choose **Trigger** on `lab_medallion_daily` and
-set `rows_per_shard` to `2500000` for 20 million events. The exercises in each
-lab's README go further.
-
-## Task 12. Clean up
+In the lab terminal (with the lines from [Task 2](#task-2-point-the-lab-at-your-project)):
 
 ```bash
 make gke-down
 ```
 
-It asks you to type the project id, then deletes the cluster, the Artifact
-Registry repository, the service account and the `dexaflow_showcase` and
-`dexaflow_lab` datasets. Stop `make gke-ui` in the second terminal with Ctrl+C.
+It lists what it will delete and asks you to type the project id:
+
+- the GKE cluster `dexaflow-showcase`
+- the Artifact Registry repository `dexaflow-showcase`
+- the BigQuery datasets `dexaflow_showcase` and `dexaflow_lab`
+- the service account `dexaflow-tasks` and its role bindings
+
+If you changed `LAB_DATASET` in Part 3, delete that dataset too:
+`bq rm -r -f -d "$GCP_PROJECT:my_lab"`.
+
+Stop `make gke-ui` in the second terminal with Ctrl+C.
 
 **Check your progress**
 
@@ -374,15 +493,30 @@ Registry repository, the service account and the `dexaflow_showcase` and
 gcloud container clusters list --project "$GCP_PROJECT"
 ```
 
-`dexaflow-showcase` is no longer listed.
+`dexaflow-showcase` is not listed.
+
+## What next
+
+- Run the same DAGs on a local cluster: [docs/quickstart-local.md](docs/quickstart-local.md).
+- How the GKE environment is built, and how production differs: [docs/gke.md](docs/gke.md).
+- Dexaflow itself: <https://github.com/dexadata/dexaflow>.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| `no Dexaflow server at http://localhost:8081` | `make gke-ui` is not running in the second terminal. |
-| `run 'make gke-up gke-deploy' first` | Run Task 3 and Task 4 in this clone; both are safe to repeat. |
-| A run ends with `failed` | Open the printed link, click the red task and read its log. |
 | `dexaflow: command not found` | `export PATH="$HOME/.dexaflow/bin:$PATH"` |
+| `no GCP project` | Task 2 was not run in this terminal. |
+| `make gke-up` fails on an API or IAM step | You need Owner (or Editor plus Project IAM Admin) on the project. |
+| `run 'make gke-up' first` | Run Task 3 in this clone; it is safe to repeat. |
+| `curl` prints `000` | `make gke-ui` is not running in the second terminal. |
+| `invalid credentials` | The user is `admin@leoflow.local`, not `admin`. |
+| `no Dexaflow server at http://localhost:8081` | `make gke-ui` is not running in the second terminal. |
+| `failed  <dag_id>` and a link | Open the link, click the red task, read its log. |
+| An error from `dexaflow compile` | It shows the Python error from `dag.py`; fix it and deploy again. |
+| `my-dags/my_first_dag already exists` | You already ran `make new-dag`; continue with the `cat` commands. |
+| `Access Denied` in a task log | `make gke-up` grants BigQuery roles to `dexaflow-tasks`; run it again, it is safe to repeat. |
+| `Not found: Dataset` in the `bq` check | The run that creates it has not finished; wait for the `success` line. |
+| `mart_daily_sales is empty` in `lab_02_quality_checks` | The public shop had no completed orders for that day; trigger `lab_01_daily_sales` for another day from the UI. |
 
 More in [docs/troubleshooting.md](docs/troubleshooting.md).

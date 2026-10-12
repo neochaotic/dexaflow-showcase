@@ -11,8 +11,9 @@ installed with Helm). Examples for **Dexaflow Lite** (single host) will follow.
 > Dexaflow is pre-1.0. This repository pins the version it was tested with in
 > [`versions.env`](versions.env).
 
-> **New here?** [LAB.md](LAB.md) is a copy-and-paste lab: GKE cluster, Dexaflow
-> Pro, your first DAGs and two BigQuery labs, in about an hour.
+> **New here?** Follow the [hands-on lab](LAB.md): copy-and-paste
+> steps from an empty Google Cloud project to Dexaflow Pro on GKE, your own
+> DAGs and two BigQuery pipelines, in about an hour.
 
 ## Pick your path
 
@@ -20,7 +21,7 @@ installed with Helm). Examples for **Dexaflow Lite** (single host) will follow.
 |---|---|---|
 | [Dry run](docs/dry-run.md) | `dexaflow` CLI, `helm` | Every DAG compiled and every Kubernetes manifest rendered, no cluster. |
 | [Local quickstart](docs/quickstart-local.md) | Docker, `k3d`, `kubectl`, `helm` | Dexaflow Pro on a local cluster, running the use cases. |
-| [GKE](docs/gke.md) | A GCP project with billing | The presentation environment, including the BigQuery use cases. |
+| [GKE lab](LAB.md) | A GCP project with billing | Step by step: Dexaflow Pro on GKE, your own DAGs, the BigQuery use cases and labs. |
 
 ## Quickstart
 
