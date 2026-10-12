@@ -60,18 +60,21 @@ deploy_dag() {
   log "${id}"
   # The DAG version defaults to `git describe`, so a second deploy of the same
   # commit would be rejected (409). Suffix it with the image tag.
-  local image="${REGISTRY}/${id}:${tag}" attempt
+  local image="${REGISTRY}/${id}:${tag}" attempt build_log="${REPO_ROOT}/.out/build-${id}.log"
+  # Docker's layer-by-layer progress goes to a log; it is shown only on failure.
+  slow "Compiling, building and pushing the image: up to 2 minutes the first time (log: .out/build-${id}.log)"
   if ! run dexaflow compile "${dir}" --image "${image}" --build --push \
       --dag-version "$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}" \
-      -o "${REPO_ROOT}/.out/dags/${id}.json"; then
+      -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1; then
     # A built image whose push failed is usually a network blip (Cloud Shell
     # sees "connection refused" now and then): push it again instead of failing.
-    docker image inspect "${image}" >/dev/null 2>&1 || die "compiling ${id} failed; see the error above"
+    docker image inspect "${image}" >/dev/null 2>&1 \
+      || { tail -40 "${build_log}" >&2; die "compiling ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
     for attempt in 1 2 3; do
       warn "pushing the image failed; retrying (${attempt}/3)"
       sleep $((attempt * 5))
       run docker push --quiet "${image}" && break
-      [[ "${attempt}" == "3" ]] && die "could not push ${image}; check the network and run the same command again"
+      [[ "${attempt}" == "3" ]] && die "could not push ${image}; check the network and run the same command again (log: .out/build-${id}.log)"
     done
   fi
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"

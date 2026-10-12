@@ -312,9 +312,11 @@ make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
    in the UI.
 3. `TRIGGER=1` starts a run and waits for it to finish.
 
-⏳ The first build of an image takes a minute or two and prints Docker's build
-steps. While the run goes, a `... is running (1m30s)` line appears every 30
-seconds; the run itself takes about a minute.
+⏳ The first build of an image takes a minute or two, quietly: Docker's build
+output goes to `.out/build-<dag_id>.log`. If pushing the image hits a network
+error, the deploy retries it on its own. While the run goes, a
+`... is running (1m30s)` line appears every 30 seconds; the run itself takes
+about a minute.
 
 **Check your progress**
 
