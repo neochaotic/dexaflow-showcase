@@ -2,7 +2,7 @@
 
 | Tool | Needed for | Install |
 |---|---|---|
-| `dexaflow` CLI | everything | `curl -fsSL https://raw.githubusercontent.com/dexadata/dexaflow/main/install.sh \| DEXAFLOW_VERSION=v0.5.3 sh` |
+| `dexaflow` CLI | everything | `curl -fsSL https://raw.githubusercontent.com/dexadata/dexaflow/main/install.sh \| DEXAFLOW_VERSION=v0.5.2 sh` |
 | `helm` 3.16+ | dry run, local, GKE | <https://helm.sh/docs/intro/install/> |
 | Docker | local, GKE (builds DAG images) | <https://docs.docker.com/get-docker/> |
 | `k3d` 5.x | local | <https://k3d.io/#installation> |

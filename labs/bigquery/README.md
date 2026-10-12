@@ -58,7 +58,7 @@ registers it, and the UI shows the new version.
 2. **Re-run a past day.** In the UI, open `lab_01_daily_sales`, choose
    **Trigger**, and set the logical date to a day last week. The run processes
    only that day, and running it twice gives the same result. (The Backfill
-   screen is not wired up yet in Dexaflow 0.5.3.)
+   screen is not wired up yet in Dexaflow 0.5.2.)
 3. **Break a check.** In `02-quality-checks/dag.py`, change a rule so it fails
    (for example `revenue < 1000000`). Deploy, trigger, and read the failure and
    the retry in the task logs.
