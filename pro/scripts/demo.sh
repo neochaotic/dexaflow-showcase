@@ -3,8 +3,9 @@
 # GCP use cases (NN-gcp-*) are skipped unless GCP_PROJECT is set, which
 # `make gke-demo` does through .out/gke.env.
 source "$(dirname "$0")/lib.sh"
-need dexaflow; need docker; need curl
+need dexaflow; need curl
 source "$(dirname "$0")/target.sh"
+[[ "${DEXAFLOW_BUILDER:-docker}" == "cloudbuild" ]] || need docker
 configure_gcp
 
 while read -r dir; do

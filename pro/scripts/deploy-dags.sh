@@ -3,9 +3,10 @@
 # Used after every edit: `make deploy DAG=labs/bigquery/01-daily-sales`.
 # Set TRIGGER=1 to also start a run.
 source "$(dirname "$0")/lib.sh"
-need dexaflow; need docker; need curl
+need dexaflow; need curl
 [[ $# -gt 0 ]] || die "usage: deploy-dags.sh <path> [<path> ...]"
 source "$(dirname "$0")/target.sh"
+[[ "${DEXAFLOW_BUILDER:-docker}" == "cloudbuild" ]] || need docker
 configure_gcp
 
 while read -r dir; do

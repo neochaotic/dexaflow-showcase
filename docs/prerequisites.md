@@ -4,7 +4,7 @@
 |---|---|---|
 | `dexaflow` CLI | everything | `make cli` (installs the version pinned in `versions.env` into `~/.dexaflow/bin`) |
 | `helm` 3.16+ | dry run, local, GKE | <https://helm.sh/docs/intro/install/> |
-| Docker | local, GKE (builds DAG images) | <https://docs.docker.com/get-docker/> |
+| Docker | local (builds DAG images; on GKE, Cloud Build does) | <https://docs.docker.com/get-docker/> |
 | `k3d` 5.x | local | <https://k3d.io/#installation> |
 | `kubectl` | local, GKE | <https://kubernetes.io/docs/tasks/tools/> |
 | `gcloud` with `gke-gcloud-auth-plugin` and `bq` | GKE | <https://cloud.google.com/sdk/docs/install> |

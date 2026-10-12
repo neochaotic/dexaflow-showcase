@@ -13,7 +13,7 @@ log "Project ${GCP_PROJECT}, cluster ${GKE_CLUSTER} in ${GKE_ZONE}"
 log "Enabling APIs"
 slow "Up to 2 minutes on a new project"
 run gcloud services enable container.googleapis.com artifactregistry.googleapis.com \
-  bigquery.googleapis.com iam.googleapis.com --project "${GCP_PROJECT}"
+  bigquery.googleapis.com iam.googleapis.com cloudbuild.googleapis.com --project "${GCP_PROJECT}"
 
 if ! gcloud artifacts repositories describe "${AR_REPO}" --location "${GKE_REGION}" \
     --project "${GCP_PROJECT}" >/dev/null 2>&1; then
@@ -68,11 +68,32 @@ run gcloud iam service-accounts add-iam-policy-binding "${TASK_GSA}" --project "
   --role roles/iam.workloadIdentityUser \
   --member "serviceAccount:${GCP_PROJECT}.svc.id.goog[${NAMESPACE}/dexaflow-task]" >/dev/null
 
+# DAG images are built on Cloud Build (make deploy), not by a local Docker.
+# Its default service account needs to push to the repository and write logs;
+# projects created with automatic grants turned off do not give it that.
+BUILD_SA="$(gcloud builds get-default-service-account --project "${GCP_PROJECT}" \
+  --format 'value(serviceAccountEmail)' 2>/dev/null | sed 's|.*/||')"
+if [[ -n "${BUILD_SA}" ]]; then
+  log "Letting Cloud Build push DAG images (${BUILD_SA})"
+  run gcloud artifacts repositories add-iam-policy-binding "${AR_REPO}" --location "${GKE_REGION}" \
+    --project "${GCP_PROJECT}" --member "serviceAccount:${BUILD_SA}" \
+    --role roles/artifactregistry.writer --condition None >/dev/null
+  run gcloud projects add-iam-policy-binding "${GCP_PROJECT}" --condition None \
+    --member "serviceAccount:${BUILD_SA}" --role roles/logging.logWriter >/dev/null
+else
+  warn "could not read the Cloud Build service account; image builds use its default permissions"
+fi
+
+# Keep the admin password that gke-deploy added, so re-running gke-up is safe.
+password_line="$(grep '^DEXAFLOW_PASSWORD=' "${GKE_ENV}" 2>/dev/null || true)"
 cat > "${GKE_ENV}" <<ENV
 # Written by pro/platform/gke/provision.sh. Read by demo.sh with DEXAFLOW_TARGET=gke.
 GCP_PROJECT=${GCP_PROJECT}
 DEXAFLOW_REGISTRY=${AR_HOST}/${GCP_PROJECT}/${AR_REPO}
 DEXAFLOW_SERVER=http://localhost:${GKE_UI_PORT}
+DEXAFLOW_BUILDER=cloudbuild
+GKE_REGION=${GKE_REGION}
 ENV
+[[ -z "${password_line}" ]] || echo "${password_line}" >> "${GKE_ENV}"
 ok "GKE environment ready: cluster ${GKE_CLUSTER} in ${GCP_PROJECT}"
 next "make gke-deploy"

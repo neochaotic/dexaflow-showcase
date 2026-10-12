@@ -12,6 +12,9 @@ if [[ "${DEXAFLOW_TARGET}" == "gke" ]]; then
   [[ -f "${REPO_ROOT}/.out/gke.env" ]] || die "run 'make gke-up gke-deploy' first"
   # shellcheck disable=SC1091
   source "${REPO_ROOT}/.out/gke.env"
+  # Environments from before Cloud Build builds: run make gke-up again.
+  [[ -n "${DEXAFLOW_BUILDER:-}" ]] || die "this GKE environment predates Cloud Build image builds: run 'make gke-up' again (safe, it keeps everything)"
+  export GCP_PROJECT GKE_REGION
 fi
 
 SERVER="${DEXAFLOW_SERVER:-http://localhost:${LOCAL_UI_PORT}}"
@@ -81,13 +84,23 @@ deploy_dag() {
   # The DAG version defaults to `git describe`, so a second deploy of the same
   # commit would be rejected (409). Suffix it with the image tag.
   local image="${REGISTRY}/${id}:${tag}" build_log="${REPO_ROOT}/.out/build-${id}.log"
-  # Docker's layer-by-layer progress goes to a log; it is shown only on failure.
-  slow "Compiling and building the image: up to 2 minutes the first time (log: .out/build-${id}.log)"
-  run dexaflow compile "${dir}" --image "${image}" --build \
-      --dag-version "$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}" \
-      -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1 \
-    || { tail -40 "${build_log}" >&2; die "compiling ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
-  push_image "${image}" "${build_log}"
+  local version
+  version="$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}"
+  if [[ "${DEXAFLOW_BUILDER:-docker}" == "cloudbuild" ]]; then
+    # GKE: Cloud Build builds and pushes the image; no local Docker involved.
+    slow "Building the image on Cloud Build: 1 to 2 minutes (log: .out/build-${id}.log)"
+    run dexaflow compile "${dir}" --image "${image}" --build --push --dag-version "${version}" \
+        --builder "${REPO_ROOT}/pro/scripts/cloudbuild-builder.sh" \
+        -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1 \
+      || { tail -30 "${build_log}" >&2; die "building ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
+  else
+    # Docker's layer-by-layer progress goes to a log; it is shown only on failure.
+    slow "Compiling and building the image: up to 2 minutes the first time (log: .out/build-${id}.log)"
+    run dexaflow compile "${dir}" --image "${image}" --build --dag-version "${version}" \
+        -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1 \
+      || { tail -40 "${build_log}" >&2; die "compiling ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
+    push_image "${image}" "${build_log}"
+  fi
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"
   ok "${id} deployed: ${SERVER}/dags/${id}"
 }

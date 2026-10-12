@@ -45,8 +45,9 @@ the only long wait (about 8 minutes for the cluster).
 ## What it costs
 
 One Spot `e2-standard-2` node (the cluster can grow to 3 under load), the GKE
-cluster fee, a small Artifact Registry repository and a few BigQuery jobs, each
-capped at 1 GB billed. Running the whole lab in one sitting costs a few US
+cluster fee, a small Artifact Registry repository, a few Cloud Build image
+builds (within its free monthly minutes) and a few BigQuery jobs, each capped at
+1 GB billed. Running the whole lab in one sitting costs a few US
 dollars at most. [Part 4](#part-4-clean-up) stops all cost; do it even if you stop
 halfway.
 
@@ -55,7 +56,7 @@ halfway.
 ```
 your terminal                     GKE cluster "dexaflow-showcase"
 -------------                     -------------------------------
-make deploy DAG=...  ── image ──▶ Artifact Registry
+make deploy DAG=...  ── source ─▶ Cloud Build ── image ──▶ Artifact Registry
                      ── dag.json ▶ Dexaflow control plane (Airflow 3.2 UI, API, scheduler)
 make gke-ui ◀── port-forward ────   │  Postgres, Redis (in the cluster)
                                     ▼
@@ -80,8 +81,8 @@ for it. Go to [Task 1](#task-1-get-the-code-and-the-dexaflow-cli).
 **Option B: your own terminal (macOS or Linux).** Install
 [`gcloud`](https://cloud.google.com/sdk/docs/install),
 [`kubectl`](https://kubernetes.io/docs/tasks/tools/),
-[`helm`](https://helm.sh/docs/intro/install/) 3.16+,
-[Docker](https://docs.docker.com/get-docker/) and `make`, then:
+[`helm`](https://helm.sh/docs/intro/install/) 3.16+ and `make`
+(no Docker needed: DAG images are built on Cloud Build), then:
 
 ```bash
 gcloud auth login
@@ -174,6 +175,7 @@ exactly what it does. It enables the APIs, then creates:
 | Artifact Registry repository | `dexaflow-showcase` | one image per DAG |
 | Service account | `dexaflow-tasks` | identity of the task pods, with BigQuery job and data access |
 | Workload Identity binding | `dexaflow/dexaflow-task` | task pods act as `dexaflow-tasks` with no key file |
+| Cloud Build API and push permission | Cloud Build's default service account | builds each DAG image and pushes it to the repository, so your machine needs no Docker |
 
 ⏳ **This is the long step: about 10 minutes in all.** Enabling the APIs can take
 2 minutes, then creating the cluster about 8, while gcloud shows only a
@@ -306,15 +308,16 @@ make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
 `make deploy` runs the whole Dexaflow loop and prints each command:
 
 1. `dexaflow compile ... --build --push` reads `dag.py`, writes `dag.json`,
-   builds an image with only this DAG's dependencies and pushes it to Artifact
-   Registry. You never write a Dockerfile.
+   and has [Cloud Build](https://cloud.google.com/build/docs) build an image
+   with only this DAG's dependencies and push it to Artifact Registry. You never
+   write a Dockerfile, and your machine needs no Docker.
 2. `dexaflow push` registers `dag.json` with the control plane. The DAG appears
    in the UI.
 3. `TRIGGER=1` starts a run and waits for it to finish.
 
-⏳ The first build of an image takes a minute or two, quietly: Docker's build
-output goes to `.out/build-<dag_id>.log`. If pushing the image hits a network
-error, the deploy retries it on its own. While the run goes, a
+⏳ Each image build on Cloud Build takes a minute or two, quietly: its output
+goes to `.out/build-<dag_id>.log`, and every build is listed in the console
+under **Cloud Build > History**. While the run goes, a
 `... is running (1m30s)` line appears every 30 seconds; the run itself takes
 about a minute.
 
@@ -633,6 +636,8 @@ gcloud container clusters list
 | An error from `dexaflow compile` | It shows the Python error from `dag.py`; fix it and deploy again. |
 | `dags/my_first_dag already exists` | You already ran `make new`; continue with the `cat` commands. |
 | `No rule to make target 'new'` or `'workspace'` | You are in the wrong folder: `make workspace` runs in `dexaflow-showcase`, `make new` in `dexaflow-workspace`. |
+| `PERMISSION_DENIED` in `.out/build-<dag_id>.log` right after Task 3 | New permissions take a minute to apply; run the same `make deploy` again. |
+| `this GKE environment predates Cloud Build image builds` | Run `make gke-up` again: it adds what is missing and keeps everything else. |
 | `Access Denied` in a task log | `make gke-up` grants BigQuery roles to `dexaflow-tasks`; run it again, it is safe to repeat. |
 | `Not found: Dataset` in the `bq` check | The run that creates it has not finished; wait for the `success` line. |
 | `mart_daily_sales is empty` in `lab_02_quality_checks` | The public shop had no completed orders for that day; trigger `lab_01_daily_sales` for another day from the UI. |

@@ -41,6 +41,13 @@ database. `make gke-info` shows the UI address, the user and where the password 
 | Artifact Registry repository | `dexaflow-showcase` | DAG images |
 | Google service account | `dexaflow-tasks` | identity of task pods, with `bigquery.jobUser` and `bigquery.dataEditor` |
 | Workload Identity binding | `dexaflow/dexaflow-task` | lets task pods act as `dexaflow-tasks` without a key |
+| Cloud Build API and IAM | Cloud Build's default service account | `artifactregistry.writer` on the repository and `logging.logWriter`, to build DAG images |
+
+`make deploy` on GKE builds each DAG image with Cloud Build
+(`pro/scripts/cloudbuild-builder.sh`, passed to `dexaflow compile --builder`),
+so no local Docker daemon is needed. This also avoids Cloud Shell, whose Docker
+daemon cannot reach Artifact Registry. With `DEXAFLOW_BUILDER=docker` the image
+is built locally and pushed with `docker push` instead.
 
 Every name and region is a default in `versions.env`; override with environment
 variables (`GCP_PROJECT`, `ZONE`, `REGION`, `CLUSTER`).
