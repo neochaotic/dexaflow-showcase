@@ -21,9 +21,19 @@ check docker   "builds DAG images and runs k3d"
 check k3d      "local Kubernetes cluster"
 check kubectl  "talks to the cluster"
 check curl     "health checks and API calls"
+log "Required for GKE"
+check gcloud      "creates the cluster, registry and service accounts"
+check gke-gcloud-auth-plugin "lets kubectl talk to GKE"
+check bq          "used by make gke-down to delete the BigQuery datasets"
+if command -v gcloud >/dev/null 2>&1; then
+  if gcloud auth application-default print-access-token >/dev/null 2>&1; then
+    printf '  \033[32mok\033[0m       %-12s %s\n' "ADC" "application default credentials work"
+  else
+    printf '  \033[33mcheck\033[0m    %-12s %s\n' "ADC" "run: gcloud auth application-default login"
+  fi
+fi
 log "Optional"
 check kubeconform "schema-checks the rendered manifests in the dry run"
-check gcloud      "only for the GKE environment"
 
 if [[ "${missing}" -ne 0 ]]; then
   warn "some tools are missing; docs/prerequisites.md says how to install them"

@@ -1,0 +1,19 @@
+schema_version: "1.0"
+dag_id: lab_medallion_daily
+description: Generates synthetic e-commerce events with DuckDB and builds bronze, silver and gold layers in BigQuery.
+owner: lab
+tags:
+  - lab
+  - gcp
+python_version: "3.12"
+# The gcp connector installs the Google provider (BigQuery operators and the
+# google-cloud-bigquery client). DuckDB generates the data inside the task pod.
+connectors:
+  - gcp
+dependencies:
+  - duckdb==1.4.4
+connections:
+  - google_cloud_default
+variables:
+  - GCP_PROJECT
+  - LAB_DATASET

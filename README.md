@@ -64,6 +64,7 @@ Add `DEXAFLOW_TARGET=gke` to deploy to the GKE environment instead of the local 
 | Lab | What you build | Runs on |
 |---|---|---|
 | [BigQuery](labs/bigquery/) | a daily ELT and data quality checks on a public e-commerce dataset | GKE (your own GCP project) |
+| [Medallion](labs/medallion/) | millions of synthetic events generated with DuckDB in parallel pods, then bronze, silver and gold layers in BigQuery | GKE (your own GCP project) |
 
 ## Repository layout
 
