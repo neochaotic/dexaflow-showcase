@@ -12,7 +12,7 @@ should see. If what you see differs, see [Troubleshooting](#troubleshooting).
 | Part | You will | Time |
 |---|---|---|
 | [1. Set up GKE and Dexaflow Pro](#part-1-set-up-gke-and-dexaflow-pro) | install the CLI, create the cluster, install Dexaflow Pro, open the Airflow UI | 20 min |
-| [2. Write and deploy DAGs](#part-2-write-and-deploy-dags) | deploy a DAG, write your own, add a dependency and redeploy | 15 min |
+| [2. Write and deploy DAGs](#part-2-write-and-deploy-dags) | deploy a DAG, create your own workspace, write a DAG, add a dependency and redeploy | 15 min |
 | [3. BigQuery pipelines](#part-3-bigquery-pipelines) | query BigQuery keylessly, run a daily ELT and a 4 million event medallion pipeline | 20 min |
 | [4. Clean up](#part-4-clean-up) | delete everything the lab created | 5 min |
 
@@ -252,13 +252,23 @@ The command ends with:
 In the UI, open `showcase_hello_pipeline` and its run. Each task ran in its own
 pod. Click `load`, then **XCom**, to see the summary it returned.
 
-### Task 7. Write your own DAG
+### Task 7. Create your workspace and write your own DAG
 
-Scaffold a DAG project, replace its `dag.py`, and deploy it:
+Your DAGs do not belong in the platform repository. Create a **workspace**: a
+folder of your own, next to the clone, with its own git repository and a
+`Makefile` that deploys through the platform you just built.
 
 ```bash
-make new-dag NAME=my_first_dag
-cat > my-dags/my_first_dag/dag.py <<'EOF'
+make workspace
+cd ../dexaflow-workspace
+make help
+```
+
+Now scaffold a DAG project in it, replace its `dag.py`, and deploy it:
+
+```bash
+make new NAME=my_first_dag
+cat > dags/my_first_dag/dag.py <<'EOF'
 from airflow.sdk import DAG, task
 
 
@@ -272,7 +282,7 @@ def greet() -> str:
 with DAG("my_first_dag", schedule=None, catchup=False, tags=["lab"]):
     greet()
 EOF
-make deploy DAG=my-dags/my_first_dag TRIGGER=1
+make deploy DAG=dags/my_first_dag TRIGGER=1
 ```
 
 A DAG project is two files. `dag.py` is the DAG. `dexaflow.yaml` is its build
@@ -281,15 +291,19 @@ config: the DAG id, the Python version and the dependencies (none yet).
 **Check your progress**
 
 The command ends with `success  my_first_dag`, and `my_first_dag` shows in the
-UI with one green run.
+UI with one green run. `make list` prints `dags/my_first_dag`.
+
+This is the loop for any DAG from now on: edit files under `dags/`, then
+`make deploy DAG=dags/<name>`. To keep your DAGs, commit them and push the
+workspace to your own Git host.
 
 ### Task 8. Add a dependency and a task, then redeploy
 
-Add [Faker](https://faker.readthedocs.io/) to this DAG only, and a task that
-uses it:
+Still in the workspace, add [Faker](https://faker.readthedocs.io/) to this DAG
+only, and a task that uses it:
 
 ```bash
-cat > my-dags/my_first_dag/dexaflow.yaml <<'EOF'
+cat > dags/my_first_dag/dexaflow.yaml <<'EOF'
 schema_version: "1.0"
 dag_id: my_first_dag
 description: My first Dexaflow DAG.
@@ -297,7 +311,7 @@ python_version: "3.11"
 dependencies:
   - faker==33.1.0
 EOF
-cat > my-dags/my_first_dag/dag.py <<'EOF'
+cat > dags/my_first_dag/dag.py <<'EOF'
 from airflow.sdk import DAG, task
 
 
@@ -321,7 +335,7 @@ def greet(names: list[str]) -> int:
 with DAG("my_first_dag", schedule=None, catchup=False, tags=["lab"]):
     greet(make_customers())
 EOF
-make deploy DAG=my-dags/my_first_dag TRIGGER=1
+make deploy DAG=dags/my_first_dag TRIGGER=1
 ```
 
 Only this DAG's image has Faker. In a classic Airflow deployment every DAG
@@ -336,17 +350,19 @@ tasks, and the log of `greet` shows five generated names.
 
 [`use-cases/02-dependency-isolation`](use-cases/02-dependency-isolation/)
 has two DAGs, one pinned to pandas 1.5 on Python 3.11 and one to pandas 2.2 on
-Python 3.13. One shared Airflow environment cannot hold both.
+Python 3.13. One shared Airflow environment cannot hold both. These DAGs live
+in the platform clone, so go back there first:
 
 ```bash
+cd ../dexaflow-showcase
 make deploy DAG=use-cases/02-dependency-isolation TRIGGER=1
 ```
 
 **Check your progress**
 
 ```
-  success  legacy_pandas
-  success  modern_pandas
+  success  showcase_legacy_pandas
+  success  showcase_modern_pandas
 ```
 
 Each task log prints the pandas version it ran with.
@@ -357,7 +373,9 @@ About 20 minutes. Your DAGs query BigQuery with no key file: task pods use the
 `dexaflow-tasks` service account through Workload Identity. No DAG names your
 project; they read it from Airflow Variables.
 
-> New terminal? Run the "every new terminal" lines from [Task 2](#task-2-point-the-lab-at-your-project) first.
+Run these commands in the platform clone: `cd ../dexaflow-showcase` if you are
+still in the workspace. New terminal? Run the "every new terminal" lines from
+[Task 2](#task-2-point-the-lab-at-your-project) first.
 
 ### Task 10. Query BigQuery without a key
 
@@ -514,7 +532,8 @@ gcloud container clusters list --project "$GCP_PROJECT"
 | `no Dexaflow server at http://localhost:8081` | `make gke-ui` is not running in the second terminal. |
 | `failed  <dag_id>` and a link | Open the link, click the red task, read its log. |
 | An error from `dexaflow compile` | It shows the Python error from `dag.py`; fix it and deploy again. |
-| `my-dags/my_first_dag already exists` | You already ran `make new-dag`; continue with the `cat` commands. |
+| `dags/my_first_dag already exists` | You already ran `make new`; continue with the `cat` commands. |
+| `No rule to make target 'new'` or `'workspace'` | You are in the wrong folder: `make workspace` runs in `dexaflow-showcase`, `make new` in `dexaflow-workspace`. |
 | `Access Denied` in a task log | `make gke-up` grants BigQuery roles to `dexaflow-tasks`; run it again, it is safe to repeat. |
 | `Not found: Dataset` in the `bq` check | The run that creates it has not finished; wait for the `success` line. |
 | `mart_daily_sales is empty` in `lab_02_quality_checks` | The public shop had no completed orders for that day; trigger `lab_01_daily_sales` for another day from the UI. |

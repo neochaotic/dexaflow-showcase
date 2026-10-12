@@ -43,7 +43,7 @@ deploy_dag() {
   # The DAG version defaults to `git describe`, so a second deploy of the same
   # commit would be rejected (409). Suffix it with the image tag.
   run dexaflow compile "${dir}" --image "${REGISTRY}/${id}:${tag}" --build --push \
-    --dag-version "$(git -C "${REPO_ROOT}" describe --always --dirty)-${tag}" \
+    --dag-version "$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}" \
     -o "${REPO_ROOT}/.out/dags/${id}.json"
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"
 }

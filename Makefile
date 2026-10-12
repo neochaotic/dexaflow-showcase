@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 SCRIPTS := pro/scripts
 USE_CASE ?= all
 
-.PHONY: help cli doctor dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-info gke-demo gke-lab gke-down
+.PHONY: help cli doctor workspace dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-info gke-demo gke-lab gke-down
 
 help: ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -25,6 +25,9 @@ demo: ## Build, register and trigger the use cases (USE_CASE=01-hello-pipeline f
 
 deploy: ## Build, push and register the DAGs under DAG=<path> (TRIGGER=1 to also run them)
 	@bash $(SCRIPTS)/deploy-dags.sh $(DAG)
+
+workspace: ## Create your own DAG workspace next to this clone (DIR=path to choose)
+	@bash $(SCRIPTS)/workspace.sh $(DIR)
 
 new-dag: ## Scaffold a new DAG under my-dags/ (NAME=my_dag)
 	@bash $(SCRIPTS)/new-dag.sh $(NAME)

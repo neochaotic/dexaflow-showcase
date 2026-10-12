@@ -57,11 +57,13 @@ Run one with `make demo USE_CASE=03-fan-out`.
 Dexaflow keeps the Airflow authoring loop. Edit a `dag.py`, then deploy that one DAG:
 
 ```bash
-make new-dag NAME=my_first_dag            # scaffolds my-dags/my_first_dag
-make deploy DAG=my-dags/my_first_dag      # build, push, register (TRIGGER=1 to also run it)
+make workspace                            # your own DAG folder (and git repo) next to this clone
+cd ../dexaflow-workspace
+make new NAME=my_first_dag                # scaffolds dags/my_first_dag
+make deploy DAG=dags/my_first_dag         # build, push, register (TRIGGER=1 to also run it)
 ```
 
-Add `DEXAFLOW_TARGET=gke` to deploy to the GKE environment instead of the local one.
+The workspace deploys to GKE by default; `make deploy TARGET=local ...` targets the local cluster. Inside this repo, `make new-dag` and `make deploy` still work on `my-dags/`.
 
 ## Labs
 
