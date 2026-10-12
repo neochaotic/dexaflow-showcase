@@ -51,6 +51,26 @@ default_variable() {
   fi
 }
 
+# push_image pushes a built image. Cloud Shell's Docker daemon cannot connect to
+# Artifact Registry (containers can), so when `docker push` fails for a
+# *.pkg.dev image, the image is pushed from a container with crane instead.
+push_image() {
+  local image="$1" log_file="$2" tar
+  run docker push --quiet "${image}" >>"${log_file}" 2>&1 && return 0
+  [[ "${image}" == *.pkg.dev/* ]] || { tail -20 "${log_file}" >&2; die "could not push ${image}"; }
+  warn "docker push failed (log: ${log_file#"${REPO_ROOT}/"}); pushing from a container instead"
+  tar="$(mktemp "${TMPDIR:-/tmp}/dexaflow-image.XXXXXX")"
+  docker save "${image}" -o "${tar}"
+  printf '\033[2m$ crane push <image> %s\033[0m\n' "${image}" >&2
+  if ! TOKEN="$(gcloud auth print-access-token)" docker run --rm -e TOKEN -v "${tar}:/image.tar:ro" \
+      --entrypoint sh "${CRANE_IMAGE}" -c \
+      'crane auth login "${0%%/*}" -u oauth2accesstoken -p "${TOKEN}" >/dev/null && crane push /image.tar "$0"' \
+      "${image}" >>"${log_file}" 2>&1; then
+    rm -f "${tar}"; tail -20 "${log_file}" >&2; die "could not push ${image}; run the same command again"
+  fi
+  rm -f "${tar}"
+}
+
 # deploy_dag builds and pushes one DAG's image, then registers its dag.json.
 # This is the whole Dexaflow deploy loop: compile, build, push, register.
 deploy_dag() {
@@ -60,23 +80,14 @@ deploy_dag() {
   log "${id}"
   # The DAG version defaults to `git describe`, so a second deploy of the same
   # commit would be rejected (409). Suffix it with the image tag.
-  local image="${REGISTRY}/${id}:${tag}" attempt build_log="${REPO_ROOT}/.out/build-${id}.log"
+  local image="${REGISTRY}/${id}:${tag}" build_log="${REPO_ROOT}/.out/build-${id}.log"
   # Docker's layer-by-layer progress goes to a log; it is shown only on failure.
-  slow "Compiling, building and pushing the image: up to 2 minutes the first time (log: .out/build-${id}.log)"
-  if ! run dexaflow compile "${dir}" --image "${image}" --build --push \
+  slow "Compiling and building the image: up to 2 minutes the first time (log: .out/build-${id}.log)"
+  run dexaflow compile "${dir}" --image "${image}" --build \
       --dag-version "$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}" \
-      -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1; then
-    # A built image whose push failed is usually a network blip (Cloud Shell
-    # sees "connection refused" now and then): push it again instead of failing.
-    docker image inspect "${image}" >/dev/null 2>&1 \
-      || { tail -40 "${build_log}" >&2; die "compiling ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
-    for attempt in 1 2 3; do
-      warn "pushing the image failed; retrying (${attempt}/3)"
-      sleep $((attempt * 5))
-      run docker push --quiet "${image}" && break
-      [[ "${attempt}" == "3" ]] && die "could not push ${image}; check the network and run the same command again (log: .out/build-${id}.log)"
-    done
-  fi
+      -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1 \
+    || { tail -40 "${build_log}" >&2; die "compiling ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
+  push_image "${image}" "${build_log}"
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"
   ok "${id} deployed: ${SERVER}/dags/${id}"
 }
