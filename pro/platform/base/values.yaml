@@ -1,0 +1,11 @@
+# Values shared by every environment. Environment files under ../local and
+# ../gke layer on top of this one. Reference for every key:
+# https://github.com/dexadata/dexaflow/blob/main/helm/dexaflow/README.md
+
+replicaCount: 1
+
+# Task pods run as this ServiceAccount by default. On GKE it is annotated for
+# Workload Identity, so tasks reach BigQuery without a key.
+taskServiceAccount:
+  create: true
+  name: dexaflow-task

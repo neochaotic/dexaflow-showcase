@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Install the Dexaflow CLI
+        run: |
+          source versions.env
+          curl -fsSL https://raw.githubusercontent.com/dexadata/dexaflow/main/install.sh \
+            | DEXAFLOW_VERSION="v${DEXAFLOW_VERSION}" DEXAFLOW_INSTALL_DIR="$HOME/.dexaflow/bin" DEXAFLOW_NO_SETUP=1 sh
+          echo "$HOME/.dexaflow/bin" >> "$GITHUB_PATH"
+          "$HOME/.dexaflow/bin/dexaflow" setup
+      - name: Install kubeconform
+        run: |
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+      - run: make dry-run
+      - name: Lint shell scripts
+        run: shellcheck -x pro/scripts/*.sh pro/platform/gke/*.sh

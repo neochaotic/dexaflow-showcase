@@ -1,0 +1,12 @@
+schema_version: "1.0"
+dag_id: showcase_bigquery_python
+description: Queries BigQuery from plain Python tasks with the google-cloud-bigquery client.
+owner: showcase
+tags:
+  - showcase
+  - gcp
+python_version: "3.12"
+dependencies:
+  - google-cloud-bigquery==3.27.0
+variables:
+  - GCP_PROJECT

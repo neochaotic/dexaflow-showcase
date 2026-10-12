@@ -1,0 +1,19 @@
+# Local k3d environment. Throwaway credentials, only valid on your laptop.
+# NEVER reuse these values on a shared or public cluster.
+database:
+  url: postgres://dexaflow:showcase@postgres:5432/dexaflow?sslmode=disable
+redis:
+  url: redis://redis:6379/0
+
+auth:
+  jwtSecret: showcase-local-jwt-secret-not-for-prod
+# Exactly 32 bytes, as the server's AES-256-GCM key requires.
+secretKey: showcase-local-key-32-bytes-long
+bootstrap:
+  password: showcase-admin
+
+# k3s's built-in service load balancer publishes this Service on port 8080,
+# and k3d forwards localhost:8080 to it (see pro/scripts/up.sh). The chart has
+# no fixed nodePort setting, so a LoadBalancer Service is the stable route.
+service:
+  type: LoadBalancer

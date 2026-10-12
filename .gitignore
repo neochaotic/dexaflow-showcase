@@ -1,0 +1,9 @@
+# Compiled DAG artifacts and generated build files
+dag.json
+.leoflow.generated.Dockerfile
+.dexaflow.generated.Dockerfile
+.dockerignore
+# Local overrides and rendered output
+*.local.env
+.out/
+__pycache__/

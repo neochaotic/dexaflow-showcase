@@ -1,0 +1,7 @@
+# GKE demo environment. Credentials and datastore URLs are NOT here: deploy.sh
+# generates them into .out/gke-secrets.yaml, which is gitignored.
+
+# Kept private: reach the UI with `make gke-ui` (kubectl port-forward). Switch
+# to an Ingress with TLS and SSO before exposing it on the internet.
+service:
+  type: ClusterIP

@@ -1,0 +1,8 @@
+schema_version: "1.0"
+dag_id: showcase_fan_out
+description: Sixteen parallel workers, then one reducer. Every task is its own pod.
+owner: showcase
+tags:
+  - showcase
+python_version: "3.11"
+dependencies: []

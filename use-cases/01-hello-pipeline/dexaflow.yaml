@@ -1,0 +1,8 @@
+schema_version: "1.0"
+dag_id: showcase_hello_pipeline
+description: Extract, transform and load in three pods, passing data through XCom.
+owner: showcase
+tags:
+  - showcase
+python_version: "3.11"
+dependencies: []

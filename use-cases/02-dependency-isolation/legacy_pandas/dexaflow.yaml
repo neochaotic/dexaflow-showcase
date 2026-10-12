@@ -1,0 +1,9 @@
+schema_version: "1.0"
+dag_id: showcase_legacy_pandas
+description: Runs on pandas==1.5.3 and Python 3.11, next to a DAG that needs pandas 2.x.
+owner: showcase
+tags:
+  - showcase
+python_version: "3.11"
+dependencies:
+  - pandas==1.5.3

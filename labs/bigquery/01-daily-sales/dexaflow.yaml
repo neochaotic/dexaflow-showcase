@@ -1,0 +1,15 @@
+schema_version: "1.0"
+dag_id: lab_01_daily_sales
+description: Daily ELT from the raw tables to a staging table and a sales mart, one day per run.
+owner: lab
+tags:
+  - lab
+  - gcp
+python_version: "3.11"
+connectors:
+  - gcp
+connections:
+  - google_cloud_default
+variables:
+  - GCP_PROJECT
+  - LAB_DATASET
