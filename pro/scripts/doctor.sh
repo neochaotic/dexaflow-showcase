@@ -18,7 +18,11 @@ check dexaflow "Dexaflow CLI (validate, compile, push)"
 check helm     "renders and installs the Dexaflow Pro chart"
 log "Required for the local cluster"
 check docker   "builds DAG images and runs k3d"
-check k3d      "local Kubernetes cluster"
+if command -v k3d >/dev/null 2>&1; then
+  check k3d "local Kubernetes cluster"
+else
+  printf '  \033[2mskip\033[0m     %-12s %s\n' "k3d" "only for the local cluster path; not needed on GKE"
+fi
 check kubectl  "talks to the cluster"
 check curl     "health checks and API calls"
 log "Required for GKE"

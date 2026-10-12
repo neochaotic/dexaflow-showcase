@@ -98,8 +98,8 @@ make doctor
 ```
 
 `dexaflow version` prints `0.5.2`. `make doctor` prints `ok` for every tool
-except `k3d` (only needed for the local path) and shows the account you are
-signed in with.
+and the account you are signed in with; `k3d` and `kubeconform` show `skip`,
+they are not needed for this lab.
 
 ### Task 2. Point the lab at your project
 
