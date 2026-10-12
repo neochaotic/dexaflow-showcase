@@ -10,7 +10,7 @@ operators runs on Dexaflow unchanged, keyless, through Workload Identity.
 **What to look at**
 
 - The new table `dexaflow_showcase.top_names_by_decade` in the BigQuery console.
-- Logs of `build_report`: the BigQuery job id and bytes processed.
+- Logs of `build_report`: the BigQuery job id (open it in the BigQuery console for bytes processed).
 - No key anywhere: `kubectl -n dexaflow get secrets` has no service account key.
 
 **Cost:** the query scans the `name`, `number` and `year` columns of a public

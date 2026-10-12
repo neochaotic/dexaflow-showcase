@@ -10,7 +10,9 @@ configure_gcp
 
 while read -r dir; do
   deploy_dag "${dir}"
-  [[ "${TRIGGER:-0}" == "1" ]] && trigger_dag "$(dag_id "${dir}")"
+  if [[ "${TRIGGER:-0}" == "1" ]]; then
+    trigger_dag "$(dag_id "${dir}")"
+  fi
 done < <(dag_dirs "$@")
 
 wait_for_runs

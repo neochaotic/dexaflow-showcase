@@ -7,3 +7,5 @@ dag.json
 *.local.env
 .out/
 __pycache__/
+.kubeconfig*
+gke_gcloud_auth_plugin_cache

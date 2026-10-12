@@ -29,10 +29,13 @@ BUILD_SQL = f"""
 CREATE OR REPLACE TABLE `{PROJECT}.{DATASET}.top_names_by_decade` AS
 SELECT decade, name, total
 FROM (
-  SELECT DIV(year, 10) * 10 AS decade, name, SUM(number) AS total,
-         ROW_NUMBER() OVER (PARTITION BY DIV(year, 10) * 10 ORDER BY SUM(number) DESC) AS rank
-  FROM `bigquery-public-data.usa_names.usa_1910_current`
-  GROUP BY decade, name
+  SELECT decade, name, total,
+         ROW_NUMBER() OVER (PARTITION BY decade ORDER BY total DESC) AS rank
+  FROM (
+    SELECT DIV(year, 10) * 10 AS decade, name, SUM(number) AS total
+    FROM `bigquery-public-data.usa_names.usa_1910_current`
+    GROUP BY decade, name
+  )
 )
 WHERE rank <= 5
 """

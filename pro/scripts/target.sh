@@ -40,21 +40,26 @@ deploy_dag() {
   id="$(dag_id "${dir}")"
   tag="$(date +%Y%m%d-%H%M%S)"
   log "${id}"
+  # The DAG version defaults to `git describe`, so a second deploy of the same
+  # commit would be rejected (409). Suffix it with the image tag.
   run dexaflow compile "${dir}" --image "${REGISTRY}/${id}:${tag}" --build --push \
+    --dag-version "$(git -C "${REPO_ROOT}" describe --always --dirty)-${tag}" \
     -o "${REPO_ROOT}/.out/dags/${id}.json"
   run dexaflow push "${REPO_ROOT}/.out/dags/${id}.json" --server "${SERVER}"
 }
 
 TRIGGERED_RUNS=()
 
-# trigger_dag unpauses a DAG and starts one run. wait_for_runs waits for it.
+# trigger_dag starts one run of a DAG, then unpauses it. The run is created
+# first because unpausing a scheduled DAG makes the scheduler start its own run,
+# which with max_active_runs=1 would block ours. wait_for_runs waits for it.
 trigger_dag() {
   local id="$1" run_id
-  curl -fsS -X PATCH "${SERVER}/api/v2/dags/${id}" -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" \
-    -H 'Content-Type: application/json' -d '{"is_paused": false}' >/dev/null
   run_id="$(curl -fsS -X POST "${SERVER}/api/v2/dags/${id}/dagRuns" \
     -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" -H 'Content-Type: application/json' \
     -d '{"logical_date": null}' | sed -n 's/.*"dag_run_id": *"\([^"]*\)".*/\1/p')"
+  curl -fsS -X PATCH "${SERVER}/api/v2/dags/${id}" -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" \
+    -H 'Content-Type: application/json' -d '{"is_paused": false}' >/dev/null
   TRIGGERED_RUNS+=("${id} ${run_id}")
   log "${id}: run ${run_id} triggered, see ${SERVER}/dags/${id}"
 }
