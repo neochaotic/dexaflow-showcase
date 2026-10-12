@@ -13,8 +13,12 @@ if command -v git >/dev/null 2>&1 && [[ ! -d "${dir}/.git" ]]; then
   git -C "${dir}" init -q
   # A first commit gives deployed DAGs a real version label instead of "dev".
   git -C "${dir}" add -A
-  git -C "${dir}" commit -q -m "Create Dexaflow DAG workspace" 2>/dev/null \
-    || warn "no first commit (set git user.name and user.email); DAG versions will read dev"
+  # Without a git identity (a fresh Cloud Shell), commit as the workspace itself.
+  ident=()
+  git -C "${dir}" config user.email >/dev/null 2>&1 \
+    || ident=(-c user.name="Dexaflow workspace" -c user.email="workspace@dexaflow.local")
+  git -C "${dir}" "${ident[@]+"${ident[@]}"}" commit -q -m "Create Dexaflow DAG workspace" 2>/dev/null \
+    || warn "no first commit; DAG versions will read dev"
 fi
 ok "Workspace ready: ${dir}"
 next "cd ${dir}"

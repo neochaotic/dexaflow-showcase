@@ -18,8 +18,11 @@ SERVER="${DEXAFLOW_SERVER:-http://localhost:${LOCAL_UI_PORT}}"
 REGISTRY="${DEXAFLOW_REGISTRY:-${REGISTRY_NAME}:${REGISTRY_PORT}}"
 PASSWORD="${DEXAFLOW_PASSWORD:-showcase-admin}"
 
-curl -fsS "${SERVER}/readyz" >/dev/null 2>&1 \
-  || die "no Dexaflow server at ${SERVER} (for GKE, run 'make gke-ui' first)"
+if ! curl -fsS "${SERVER}/readyz" >/dev/null 2>&1; then
+  [[ "${DEXAFLOW_TARGET}" == "gke" ]] || [[ -f "${REPO_ROOT}/.out/gke.env" ]] \
+    || die "no Dexaflow environment in this clone: run 'make gke-up' and 'make gke-deploy' (LAB.md Tasks 3 and 4), or 'make up' for a local one"
+  die "no Dexaflow server at ${SERVER}: run 'make gke-ui' (its log is .out/gke-ui.log)"
+fi
 
 log "Signing in to ${SERVER} as ${ADMIN_EMAIL}"
 DEXAFLOW_TOKEN="$(printf '%s' "${PASSWORD}" | dexaflow auth create-token \
