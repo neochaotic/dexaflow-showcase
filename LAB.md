@@ -97,7 +97,7 @@ dexaflow version
 make doctor
 ```
 
-`dexaflow version` prints `0.5.2`. `make doctor` prints `ok` for every tool
+`dexaflow version` prints `0.5.3`. `make doctor` prints `ok` for every tool
 and the account you are signed in with; `k3d` and `kubeconform` show `skip`,
 they are not needed for this lab.
 

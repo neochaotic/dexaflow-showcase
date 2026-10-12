@@ -34,8 +34,12 @@ else
     curl -fsS "${URL}/readyz" >/dev/null 2>&1 && break
     sleep 1
   done
-  curl -fsS "${URL}/readyz" >/dev/null 2>&1 \
-    || die "the UI did not answer on ${URL}; see .out/gke-ui.log (is 'make gke-deploy' done?)"
+  if ! curl -fsS "${URL}/readyz" >/dev/null 2>&1; then
+    pkill -P "$(cat "${PID_FILE}")" 2>/dev/null || true
+    kill "$(cat "${PID_FILE}")" 2>/dev/null || true
+    rm -f "${PID_FILE}"
+    die "the UI did not answer on ${URL}; see .out/gke-ui.log (is 'make gke-deploy' done?)"
+  fi
 fi
 log "UI on ${URL} (runs in the background; stop it with: make gke-ui-stop)"
 if [[ -n "${CLOUD_SHELL:-}" ]]; then

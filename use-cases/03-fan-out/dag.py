@@ -31,6 +31,6 @@ def combine(values: list[float]) -> dict:
 
 with DAG("showcase_fan_out", schedule=None, catchup=False, tags=["showcase"]):
     # Calling the same @task several times gives estimate, estimate__1, ... as in Airflow.
-    # (`estimate.override(task_id=...)` would read better but the Dexaflow 0.5.2
+    # (`estimate.override(task_id=...)` would read better but the Dexaflow 0.5.3
     # parser does not support it yet.)
     combine([estimate(n) for n in range(WORKERS)])

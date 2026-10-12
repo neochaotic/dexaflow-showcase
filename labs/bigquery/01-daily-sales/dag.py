@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
-# durable=False: the Dexaflow 0.5.2 runtime does not support the provider's
+# durable=False: the Dexaflow runtime (0.5.2, 0.5.3) does not support the provider's
 # resumable-job path yet (its task instance lacks `stats_tags`).
 from airflow.sdk import DAG
 
