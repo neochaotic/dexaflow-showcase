@@ -107,18 +107,30 @@ deploy_dag() {
 
 TRIGGERED_RUNS=()
 
-# trigger_dag starts one run of a DAG, then unpauses it. The run is created
-# first because unpausing a scheduled DAG makes the scheduler start its own run,
-# which with max_active_runs=1 would block ours. wait_for_runs waits for it.
+# trigger_dag starts one run of a DAG, then unpauses it. A DAG registered by
+# `dexaflow push` can already be unpaused, and then the scheduler may have
+# started its own run of the latest interval; with max_active_runs=1 our run is
+# refused (409). In that case wait_for_runs waits for the scheduler's run.
 trigger_dag() {
-  local id="$1" run_id
-  run_id="$(curl -fsS -X POST "${SERVER}/api/v2/dags/${id}/dagRuns" \
+  local id="$1" run_id body code
+  body="$(curl -sS -w '\n%{http_code}' -X POST "${SERVER}/api/v2/dags/${id}/dagRuns" \
     -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" -H 'Content-Type: application/json' \
-    -d '{"logical_date": null}' | sed -n 's/.*"dag_run_id": *"\([^"]*\)".*/\1/p')"
+    -d '{"logical_date": null}')"
+  code="${body##*$'\n'}"
+  if [[ "${code}" == 2* ]]; then
+    run_id="$(sed -n 's/.*"dag_run_id": *"\([^"]*\)".*/\1/p' <<<"${body}")"
+    log "${id}: run ${run_id} started"
+  elif [[ "${code}" == 409 ]]; then
+    run_id="$(curl -fsS "${SERVER}/api/v2/dags/${id}/dagRuns?state=queued&state=running&order_by=-run_after&limit=1" \
+      -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" | sed -n 's/.*"dag_run_id": *"\([^"]*\)".*/\1/p' | head -1)"
+    [[ -n "${run_id}" ]] || die "${id}: the server refused a new run (409) and no run is active: ${body%$'\n'*}"
+    log "${id}: a scheduled run is already active (${run_id}); waiting for it instead"
+  else
+    die "${id}: starting a run failed (HTTP ${code}): ${body%$'\n'*}"
+  fi
   curl -fsS -X PATCH "${SERVER}/api/v2/dags/${id}" -H "Authorization: Bearer ${DEXAFLOW_TOKEN}" \
     -H 'Content-Type: application/json' -d '{"is_paused": false}' >/dev/null
   TRIGGERED_RUNS+=("${id} ${run_id}")
-  log "${id}: run ${run_id} started"
 }
 
 # wait_for_runs polls every triggered run until it finishes, prints a summary
