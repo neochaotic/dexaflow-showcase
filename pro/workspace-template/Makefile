@@ -15,7 +15,10 @@ new: ## Scaffold a DAG project under dags/ (NAME=my_dag)
 
 deploy: ## Build, push and register one DAG (DAG=dags/my_dag, TRIGGER=1 to also run it)
 	@test -n "$(DAG)" || { echo "usage: make deploy DAG=dags/<name> [TRIGGER=1]"; exit 1; }
-	@DEXAFLOW_TARGET=$(TARGET) bash $(SHOWCASE)/pro/scripts/deploy-dags.sh $(abspath $(DAG))
+	@# A path that is not in this workspace but is in the platform clone
+	@# (use-cases/..., labs/...) deploys from the clone.
+	@dag="$(abspath $(DAG))"; [ -e "$$dag" ] || [ ! -e "$(SHOWCASE)/$(DAG)" ] || dag="$(SHOWCASE)/$(DAG)"; \
+	  DEXAFLOW_TARGET=$(TARGET) bash $(SHOWCASE)/pro/scripts/deploy-dags.sh "$$dag"
 
 deploy-all: ## Build, push and register every DAG under dags/
 	@DEXAFLOW_TARGET=$(TARGET) bash $(SHOWCASE)/pro/scripts/deploy-dags.sh $(CURDIR)/dags
