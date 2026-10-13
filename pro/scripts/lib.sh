@@ -41,7 +41,7 @@ use_case_dirs() {
 dag_dirs() {
   local path
   for path in "$@"; do
-    [[ -e "${path}" ]] || die "no such path: ${path}"
+    [[ -e "${path}" ]] || die "no such path: ${path} (use-cases/ and labs/ are in the platform clone: cd ~/dexaflow-showcase)"
     find "${path}" -name dexaflow.yaml -not -path '*/.out/*' -exec dirname {} \;
   done | sort
 }
