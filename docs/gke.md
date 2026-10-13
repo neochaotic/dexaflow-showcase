@@ -54,6 +54,11 @@ variables (`GCP_PROJECT`, `ZONE`, `REGION`, `CLUSTER`).
 
 ## Easy path versus production shape
 
+Spot nodes are cheap because Google can reclaim them at any time; the pods
+then restart on another node. Postgres keeps its data on a PersistentVolumeClaim
+(`postgres-data`), so DAGs and runs survive that. Production runs the control
+plane on regular nodes and Postgres on Cloud SQL.
+
 `make gke-deploy` runs Postgres and Redis inside the cluster, which is enough
 for a demo. For Cloud SQL and Memorystore, follow the upstream recipe
 [`deploy/k8s`](https://github.com/dexadata/dexaflow/tree/main/deploy/k8s).

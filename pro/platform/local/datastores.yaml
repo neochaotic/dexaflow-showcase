@@ -1,6 +1,15 @@
-# Throwaway Postgres and Redis for the local environment: official images,
-# emptyDir storage, no Redis auth. Data is lost when a pod restarts.
+# Small Postgres and Redis for the local and GKE lab environments: official
+# images, no Redis auth. Postgres keeps its data on a PersistentVolumeClaim, so
+# it survives a pod restart or, on GKE, a Spot node being reclaimed; Redis holds
+# nothing that must survive. Not for production (see docs/gke.md).
 # Adapted from the upstream PoC recipe (helm/dexaflow/examples/README.md).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: postgres-data }
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: { requests: { storage: 5Gi } }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,6 +17,8 @@ metadata:
   labels: { app: postgres }
 spec:
   replicas: 1
+  # One pod at a time: the volume attaches to a single node.
+  strategy: { type: Recreate, rollingUpdate: null }
   selector: { matchLabels: { app: postgres } }
   template:
     metadata:
@@ -31,7 +42,7 @@ spec:
           volumeMounts:
             - { name: data, mountPath: /var/lib/postgresql/data }
       volumes:
-        - { name: data, emptyDir: {} }
+        - { name: data, persistentVolumeClaim: { claimName: postgres-data } }
 ---
 apiVersion: v1
 kind: Service

@@ -12,11 +12,13 @@ read -r answer
 [[ "${answer}" == "${GCP_PROJECT}" ]] || die "not confirmed, nothing changed"
 
 run gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}"
-# Postgres keeps its data in an emptyDir, so a new pod starts empty.
-log "Restarting Postgres and Redis with empty storage"
-run kubectl -n "${NAMESPACE}" rollout restart deploy/postgres deploy/redis
-run kubectl -n "${NAMESPACE}" rollout status deploy/postgres --timeout=300s
-run kubectl -n "${NAMESPACE}" rollout status deploy/redis --timeout=180s
+# Postgres keeps its data on the postgres-data volume: delete it for an empty
+# database. deploy.sh below recreates it.
+log "Deleting the Postgres data volume and restarting Redis"
+run kubectl -n "${NAMESPACE}" scale deploy/postgres --replicas 0
+run kubectl -n "${NAMESPACE}" wait --for=delete pod -l app=postgres --timeout=180s || true
+run kubectl -n "${NAMESPACE}" delete pvc postgres-data --ignore-not-found --wait
+run kubectl -n "${NAMESPACE}" rollout restart deploy/redis
 
 log "Recreating the schema and the admin login"
 bash "$(dirname "$0")/deploy.sh"   # helm upgrade runs the migration job again
