@@ -385,7 +385,8 @@ workspace to your own Git host.
 ### Task 8. Add a dependency and a task, then redeploy
 
 Still in the workspace, add [Faker](https://faker.readthedocs.io/) to this DAG
-only, and a task that uses it:
+only, and a task that uses it. Run the block from the workspace folder itself:
+your prompt ends in `dexaflow-workspace`, not in `my_first_dag`.
 
 ```bash
 cat > dags/my_first_dag/dexaflow.yaml <<'EOF'
@@ -634,6 +635,7 @@ gcloud container clusters list
 | `no Dexaflow server at http://localhost:8081` | The UI port-forward is not running: `make gke-ui` (its log is `.out/gke-ui.log`). |
 | `failed  <dag_id>` and a link | Open the link, click the red task, read its log. |
 | An error from `dexaflow compile` | It shows the Python error from `dag.py`; fix it and deploy again. |
+| `dags/my_first_dag/...: No such file or directory` | You are inside the DAG folder; go back to the workspace with `cd ~/dexaflow-workspace` (or wherever `make workspace` put it). |
 | `dags/my_first_dag already exists` | You already ran `make new`; continue with the `cat` commands. |
 | `No rule to make target 'new'` or `'workspace'` | You are in the wrong folder: `make workspace` runs in `dexaflow-showcase`, `make new` in `dexaflow-workspace`. |
 | `PERMISSION_DENIED` in `.out/build-<dag_id>.log` right after Task 3 | New permissions take a minute to apply; run the same `make deploy` again. |
