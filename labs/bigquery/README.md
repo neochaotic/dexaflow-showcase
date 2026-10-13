@@ -43,11 +43,13 @@ This deploys the three DAGs and runs `lab_00_setup`. When it is green, trigger
 
 ## Exercises
 
-Every change follows the same loop: **edit `dag.py`, then
-`make deploy DAG=<folder>`**. Dexaflow builds a new image for that DAG only,
+Every change follows the same loop: **edit `dag.py` or a file in its `sql/`
+folder, then `make deploy DAG=<folder>`**. The SQL lives in plain `.sql` files
+that Airflow renders at run time (`{{ ds }}`, `{{ var.value.LAB_DATASET }}`);
+`include_paths: [sql]` in `dexaflow.yaml` ships them with the DAG. Dexaflow builds a new image for that DAG only,
 registers it, and the UI shows the new version.
 
-1. **Add a column.** In `01-daily-sales/dag.py`, add `brand_count` (distinct
+1. **Add a column.** In `01-daily-sales/sql/build_daily_sales.sql`, add `brand_count` (distinct
    brands) to `mart_daily_sales`. Drop the table in BigQuery first, or add the
    column with `ALTER TABLE`. Deploy with
    `make deploy DAG=labs/bigquery/01-daily-sales DEXAFLOW_TARGET=gke`.
@@ -55,11 +57,13 @@ registers it, and the UI shows the new version.
    **Trigger**, and set the logical date to a day last week. The run processes
    only that day, and running it twice gives the same result. (The Backfill
    screen is not wired up yet in Dexaflow 0.5.3.)
-3. **Break a check.** In `02-quality-checks/dag.py`, change a rule so it fails
+3. **Break a check.** In a file under `02-quality-checks/sql/`, change a rule so it fails
    (for example `revenue < 1000000`). Deploy, trigger, and read the failure and
    the retry in the task logs.
-4. **Add a task.** Add a `top_brands` table built from `stg_order_lines` after
-   `stage_order_lines`, in parallel with `build_daily_sales`.
+4. **Add a task.** Add `sql/top_brands.sql`, a table built from
+   `stg_order_lines`, and a `bq("top_brands")` task after `stage_order_lines`,
+   in parallel with `build_daily_sales`. In `02-quality-checks`, a new check
+   is just a new `.sql` file: every file there becomes a task.
 5. **Write your own DAG.** `make workspace` creates your own DAG folder next to
    this clone; there, `make new NAME=my_first_dag` scaffolds one and
    `make deploy DAG=dags/my_first_dag TRIGGER=1` deploys and runs it

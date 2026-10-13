@@ -17,6 +17,7 @@ past day from the UI, change the schedule.
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 # durable=False: the Dexaflow runtime (0.5.2, 0.5.3) does not support the provider's
@@ -27,38 +28,20 @@ PROJECT = "{{ var.value.GCP_PROJECT }}"
 DATASET = "{{ var.value.LAB_DATASET }}"
 LOCATION = "US"
 MAX_BYTES_BILLED = str(1_000_000_000)
-T = f"`{PROJECT}.{DATASET}"  # table prefix, closed with the table name and a backtick
-
-STAGE_SQL = f"""
-CREATE TABLE IF NOT EXISTS {T}.stg_order_lines` (
-  order_date DATE, order_id INT64, category STRING, brand STRING, sale_price FLOAT64
-);
-DELETE FROM {T}.stg_order_lines` WHERE order_date = DATE('{{{{ ds }}}}');
-INSERT INTO {T}.stg_order_lines`
-SELECT DATE(oi.created_at), oi.order_id, p.category, p.brand, oi.sale_price
-FROM {T}.raw_order_items` AS oi
-JOIN {T}.raw_products` AS p ON p.id = oi.product_id
-WHERE oi.status = 'Complete' AND DATE(oi.created_at) = DATE('{{{{ ds }}}}');
-"""
-
-MART_SQL = f"""
-CREATE TABLE IF NOT EXISTS {T}.mart_daily_sales` (
-  order_date DATE, category STRING, orders INT64, revenue FLOAT64
-);
-DELETE FROM {T}.mart_daily_sales` WHERE order_date = DATE('{{{{ ds }}}}');
-INSERT INTO {T}.mart_daily_sales`
-SELECT order_date, category, COUNT(DISTINCT order_id), ROUND(SUM(sale_price), 2)
-FROM {T}.stg_order_lines`
-WHERE order_date = DATE('{{{{ ds }}}}')
-GROUP BY order_date, category;
-"""
+# The SQL lives in sql/ (shipped with the DAG through include_paths in
+# dexaflow.yaml). Airflow renders its {{ ds }} and Variables at run time.
+SQL_DIR = Path(__file__).parent / "sql"
 
 
-def bq(task_id: str, sql: str) -> BigQueryInsertJobOperator:
+def sql(name: str) -> str:
+    return (SQL_DIR / f"{name}.sql").read_text()
+
+
+def bq(task_id: str) -> BigQueryInsertJobOperator:
     return BigQueryInsertJobOperator(
         durable=False,
         task_id=task_id, project_id=PROJECT, location=LOCATION,
-        configuration={"query": {"query": sql, "useLegacySql": False,
+        configuration={"query": {"query": sql(task_id), "useLegacySql": False,
                                  "maximumBytesBilled": MAX_BYTES_BILLED}},
     )
 
@@ -71,4 +54,4 @@ with DAG(
     max_active_runs=1,
     tags=["lab", "gcp"],
 ):
-    bq("stage_order_lines", STAGE_SQL) >> bq("build_daily_sales", MART_SQL)
+    bq("stage_order_lines") >> bq("build_daily_sales")

@@ -7,6 +7,7 @@ Airflow. Exercise: break a rule on purpose and watch the failure in the UI.
 from __future__ import annotations
 
 from datetime import timedelta
+from pathlib import Path
 
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 # durable=False: the Dexaflow runtime (0.5.2, 0.5.3) does not support the provider's
@@ -14,18 +15,11 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from airflow.sdk import DAG
 
 PROJECT = "{{ var.value.GCP_PROJECT }}"
-DATASET = "{{ var.value.LAB_DATASET }}"
 LOCATION = "US"
-MART = f"`{PROJECT}.{DATASET}.mart_daily_sales`"
-
-CHECKS = {
-    "mart_not_empty": f"ASSERT (SELECT COUNT(*) FROM {MART}) > 0 AS 'mart_daily_sales is empty'",
-    "no_negative_revenue": f"ASSERT NOT EXISTS (SELECT 1 FROM {MART} WHERE revenue < 0) AS 'negative revenue found'",
-    "one_row_per_day_and_category": (
-        f"ASSERT NOT EXISTS (SELECT order_date, category FROM {MART} "
-        f"GROUP BY 1, 2 HAVING COUNT(*) > 1) AS 'duplicate rows in mart_daily_sales'"
-    ),
-}
+# One check per file in sql/ (shipped through include_paths in dexaflow.yaml):
+# add a file, get a task.
+SQL_DIR = Path(__file__).parent / "sql"
+CHECKS = {path.stem: path.read_text() for path in sorted(SQL_DIR.glob("*.sql"))}
 
 with DAG(
     "lab_02_quality_checks",

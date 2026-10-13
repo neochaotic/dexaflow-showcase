@@ -17,3 +17,6 @@ connections:
 variables:
   - GCP_PROJECT
   - LAB_DATASET
+# Ship the SQL files with the DAG (only dag.py is copied otherwise).
+include_paths:
+  - sql

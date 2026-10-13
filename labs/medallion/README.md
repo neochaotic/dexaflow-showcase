@@ -48,8 +48,9 @@ Variables, like the BigQuery lab.
 1. **Scale out.** Change `SHARDS` from 8 to 16 in `dag.py`, deploy with
    `make deploy DAG=labs/medallion DEXAFLOW_TARGET=gke`, and watch the cluster
    add nodes (`kubectl get nodes -w`).
-2. **Add a bad-data rule.** Make the generator emit prices of 0 for some rows,
-   then filter them in silver and add an `ASSERT` for it.
+2. **Add a bad-data rule.** Make the generator (`sql/generate_shard.duckdb.sql`)
+   emit prices of 0 for some rows, then filter them in `sql/silver_events.sql`
+   and add an `ASSERT` to `sql/quality_checks.sql`.
 3. **New gold table.** Add `gold_top_products` (top 10 products by revenue per
    day) after `silver_events`.
 4. **Break silver on purpose.** Remove the `QUALIFY` deduplication and watch

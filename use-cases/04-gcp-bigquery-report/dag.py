@@ -11,6 +11,8 @@ The project comes from the GCP_PROJECT Variable at run time.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCreateEmptyDatasetOperator,
     BigQueryInsertJobOperator,
@@ -20,30 +22,18 @@ from airflow.providers.google.cloud.operators.bigquery import (
 from airflow.sdk import DAG
 
 PROJECT = "{{ var.value.GCP_PROJECT }}"
-DATASET = "dexaflow_showcase"
+DATASET = "dexaflow_showcase"  # also named in sql/*.sql
 LOCATION = "US"
 # Cost guardrail: BigQuery rejects, at no cost, any job that would bill more.
 MAX_BYTES_BILLED = str(1_000_000_000)  # 1 GB
 
-BUILD_SQL = f"""
-CREATE OR REPLACE TABLE `{PROJECT}.{DATASET}.top_names_by_decade` AS
-SELECT decade, name, total
-FROM (
-  SELECT decade, name, total,
-         ROW_NUMBER() OVER (PARTITION BY decade ORDER BY total DESC) AS rank
-  FROM (
-    SELECT DIV(year, 10) * 10 AS decade, name, SUM(number) AS total
-    FROM `bigquery-public-data.usa_names.usa_1910_current`
-    GROUP BY decade, name
-  )
-)
-WHERE rank <= 5
-"""
+# The SQL lives in sql/ (shipped with the DAG through include_paths in
+# dexaflow.yaml), so it reads, highlights and lints as plain SQL.
+SQL_DIR = Path(__file__).parent / "sql"
 
-CHECK_SQL = f"""
-SELECT COUNT(*) AS row_count, COUNT(DISTINCT decade) AS decades
-FROM `{PROJECT}.{DATASET}.top_names_by_decade`
-"""
+
+def sql(name: str) -> str:
+    return (SQL_DIR / f"{name}.sql").read_text()
 
 
 def _job(sql: str) -> dict:
@@ -57,10 +47,10 @@ with DAG("showcase_bigquery_report", schedule=None, catchup=False, tags=["showca
     )
     build = BigQueryInsertJobOperator(
         durable=False,
-        task_id="build_report", configuration=_job(BUILD_SQL), project_id=PROJECT, location=LOCATION,
+        task_id="build_report", configuration=_job(sql("build_report")), project_id=PROJECT, location=LOCATION,
     )
     check = BigQueryInsertJobOperator(
         durable=False,
-        task_id="check_report", configuration=_job(CHECK_SQL), project_id=PROJECT, location=LOCATION,
+        task_id="check_report", configuration=_job(sql("check_report")), project_id=PROJECT, location=LOCATION,
     )
     create_dataset >> build >> check

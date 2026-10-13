@@ -15,3 +15,6 @@ connections:
   - google_cloud_default
 variables:
   - GCP_PROJECT
+# Ship the SQL files with the DAG (only dag.py is copied otherwise).
+include_paths:
+  - sql
