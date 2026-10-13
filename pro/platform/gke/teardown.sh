@@ -33,3 +33,8 @@ done
 run gcloud iam service-accounts delete "${TASK_GSA}" --project "${GCP_PROJECT}" --quiet || true
 rm -f "${GKE_ENV}" "${GKE_SECRETS}"
 ok "GKE demo environment removed from ${GCP_PROJECT}"
+# gcloud builds submit keeps the uploaded DAG sources in a bucket it shares
+# with every other Cloud Build user of the project, so it is only listed here.
+if gcloud storage buckets describe "gs://${GCP_PROJECT}_cloudbuild" >/dev/null 2>&1; then
+  next "Cloud Build kept the DAG sources (a few KB) in gs://${GCP_PROJECT}_cloudbuild. If nothing else in the project uses Cloud Build: gcloud storage rm -r gs://${GCP_PROJECT}_cloudbuild"
+fi
