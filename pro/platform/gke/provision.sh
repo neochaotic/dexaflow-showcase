@@ -2,7 +2,8 @@
 # Provision everything the GKE demo needs, idempotently:
 #   1. the APIs (GKE, Artifact Registry, BigQuery)
 #   2. an Artifact Registry repository for the DAG images
-#   3. a GKE Standard zonal cluster on Spot nodes, with Workload Identity
+#   3. a GKE Standard zonal cluster (regular nodes; GKE_SPOT=true for Spot),
+#      with Workload Identity
 #   4. a Google service account for task pods, allowed to run BigQuery jobs,
 #      bound to the dexaflow-task Kubernetes ServiceAccount (no keys anywhere)
 source "$(dirname "$0")/lib-gke.sh"
@@ -24,6 +25,8 @@ if ! gcloud artifacts repositories describe "${AR_REPO}" --location "${GKE_REGIO
 fi
 run gcloud auth configure-docker "${AR_HOST}" --quiet
 
+SPOT_FLAG=()
+[[ "${GKE_SPOT}" != "true" ]] || SPOT_FLAG=(--spot)
 if ! gcloud container clusters describe "${GKE_CLUSTER}" --zone "${GKE_ZONE}" \
     --project "${GCP_PROJECT}" >/dev/null 2>&1; then
   log "Creating GKE cluster ${GKE_CLUSTER}"
@@ -31,7 +34,7 @@ if ! gcloud container clusters describe "${GKE_CLUSTER}" --zone "${GKE_ZONE}" \
   run gcloud container clusters create "${GKE_CLUSTER}" \
     --project "${GCP_PROJECT}" --zone "${GKE_ZONE}" \
     --release-channel regular \
-    --machine-type "${GKE_MACHINE_TYPE}" --spot \
+    --machine-type "${GKE_MACHINE_TYPE}" "${SPOT_FLAG[@]+"${SPOT_FLAG[@]}"}" \
     --num-nodes 1 --enable-autoscaling --min-nodes 1 --max-nodes "${GKE_MAX_NODES}" \
     --disk-type pd-standard --disk-size 50 \
     --workload-pool "${GCP_PROJECT}.svc.id.goog" \
@@ -39,6 +42,23 @@ if ! gcloud container clusters describe "${GKE_CLUSTER}" --zone "${GKE_ZONE}" \
 else
   warn "Cluster ${GKE_CLUSTER} already exists in ${GCP_PROJECT}: reusing it."
   warn "Whatever is deployed on it stays (DAGs, runs). For an empty Dexaflow: make gke-reset."
+  # Clusters from before GKE_SPOT=false run on Spot: move them to regular nodes
+  # (a new pool, then the Spot pool goes; Postgres keeps its data volume).
+  if [[ "${GKE_SPOT}" != "true" ]] && [[ "$(gcloud container node-pools describe default-pool \
+      --cluster "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" \
+      --format 'value(config.spot)' 2>/dev/null)" == "True" ]]; then
+    log "Moving the cluster from Spot to regular nodes"
+    slow "About 5 minutes: a new node pool starts, then the Spot pool drains and goes"
+    if ! gcloud container node-pools describe regular-pool --cluster "${GKE_CLUSTER}" \
+        --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" >/dev/null 2>&1; then
+      run gcloud container node-pools create regular-pool --cluster "${GKE_CLUSTER}" \
+        --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" --machine-type "${GKE_MACHINE_TYPE}" \
+        --num-nodes 1 --enable-autoscaling --min-nodes 1 --max-nodes "${GKE_MAX_NODES}" \
+        --disk-type pd-standard --disk-size 50 --workload-metadata GKE_METADATA
+    fi
+    run gcloud container node-pools delete default-pool --cluster "${GKE_CLUSTER}" \
+      --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" --quiet
+  fi
 fi
 run gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}"
 

@@ -1,6 +1,6 @@
 # Small Postgres and Redis for the local and GKE lab environments: official
 # images, no Redis auth. Postgres keeps its data on a PersistentVolumeClaim, so
-# it survives a pod restart or, on GKE, a Spot node being reclaimed; Redis holds
+# it survives a pod restart or moving to another node; Redis holds
 # nothing that must survive. Not for production (see docs/gke.md).
 # Adapted from the upstream PoC recipe (helm/dexaflow/examples/README.md).
 apiVersion: v1

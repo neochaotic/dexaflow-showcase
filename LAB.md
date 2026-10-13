@@ -47,7 +47,7 @@ the only long wait (about 8 minutes for the cluster).
 
 ## What it costs
 
-One Spot `e2-standard-2` node (the cluster can grow to 3 under load), the GKE
+One `e2-standard-2` node (the cluster can grow to 3 under load), the GKE
 cluster fee, a small Artifact Registry repository, a few Cloud Build image
 builds (within its free monthly minutes) and a few BigQuery jobs, each capped at
 1 GB billed. Running the whole lab in one sitting costs a few US
@@ -176,7 +176,7 @@ exactly what it does. It enables the APIs, then creates:
 
 | Resource | Name | Why |
 |---|---|---|
-| GKE Standard cluster, zonal, Spot nodes, 1 to 3 | `dexaflow-showcase` | runs the control plane and one pod per task |
+| GKE Standard cluster, zonal, 1 to 3 nodes | `dexaflow-showcase` | runs the control plane and one pod per task |
 | Artifact Registry repository | `dexaflow-showcase` | one image per DAG |
 | Service account | `dexaflow-tasks` | identity of the task pods, with BigQuery job and data access |
 | Workload Identity binding | `dexaflow/dexaflow-task` | task pods act as `dexaflow-tasks` with no key file |
@@ -642,7 +642,7 @@ gcloud container clusters list
 | Cloud Shell shows *Unable to forward your request to a backend ... port 8080* | Web Preview opened 8080; use **Change port** and `8081`, or replace the leading `8080-` in the preview URL with `8081-`. |
 | The UI already lists DAGs you did not deploy | `make gke-up` reused an existing cluster in your project (it says so in yellow). `make gke-reset` empties its database. |
 | `curl` prints `000` | The UI port-forward is not running: `make gke-ui`. |
-| The UI worked, then stops answering; `kubectl -n dexaflow get pods` shows new pods or `CrashLoopBackOff` | Google reclaimed a Spot node and the pods restarted elsewhere. Wait a minute, then `make gke-ui`. If `dexaflow-...` keeps crashing, run `make gke-deploy`, then `make gke-ui`. |
+| The UI worked, then stops answering; `kubectl -n dexaflow get pods` shows new pods or `CrashLoopBackOff` | The pods restarted on another node (for example after a node upgrade, or a Spot node reclaimed with `GKE_SPOT=true`). Wait a minute, then `make gke-ui`. If `dexaflow-...` keeps crashing, run `make gke-deploy`, then `make gke-ui`. |
 | `bq` asks for a default project | Type the number next to your project id, then Enter. |
 | `invalid credentials` | The user is `admin@leoflow.local`, not `admin`. |
 | `no Dexaflow server at http://localhost:8081` | The UI port-forward is not running: `make gke-ui` (its log is `.out/gke-ui.log`). |

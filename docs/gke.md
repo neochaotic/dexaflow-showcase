@@ -8,7 +8,7 @@ cases, authenticated with Workload Identity (no service account keys).
 
 ## Cost
 
-A zonal GKE Standard cluster on Spot `e2-standard-2` nodes (2 vCPU, 8 GB), autoscaling 1 to 3,
+A zonal GKE Standard cluster on `e2-standard-2` nodes (2 vCPU, 8 GB), autoscaling 1 to 3,
 an Artifact Registry repository and a few cheap BigQuery queries (each capped at
 1 GB billed). Run `make gke-down` after the talk to stop all cost.
 
@@ -37,7 +37,7 @@ database. `make gke-info` shows the UI address, the user and where the password 
 
 | Resource | Name | Why |
 |---|---|---|
-| GKE Standard cluster, zonal, Spot | `dexaflow-showcase` | runs the control plane and the task pods |
+| GKE Standard cluster, zonal | `dexaflow-showcase` | runs the control plane and the task pods |
 | Artifact Registry repository | `dexaflow-showcase` | DAG images |
 | Google service account | `dexaflow-tasks` | identity of task pods, with `bigquery.jobUser` and `bigquery.dataEditor` |
 | Workload Identity binding | `dexaflow/dexaflow-task` | lets task pods act as `dexaflow-tasks` without a key |
@@ -54,9 +54,11 @@ variables (`GCP_PROJECT`, `ZONE`, `REGION`, `CLUSTER`).
 
 ## Easy path versus production shape
 
-Spot nodes are cheap because Google can reclaim them at any time; the pods
-then restart on another node. Postgres keeps its data on a PersistentVolumeClaim
-(`postgres-data`), so DAGs and runs survive that. Production runs the control
+The nodes are regular, not Spot: Spot costs about a third, but Google can
+reclaim a Spot node at any time, which restarts the whole platform in the middle
+of a lab. `GKE_SPOT=true make gke-up` creates a Spot cluster anyway. Either way
+Postgres keeps its data on a PersistentVolumeClaim (`postgres-data`), so DAGs
+and runs survive a pod moving to another node. Production runs the control
 plane on regular nodes and Postgres on Cloud SQL.
 
 `make gke-deploy` runs Postgres and Redis inside the cluster, which is enough
