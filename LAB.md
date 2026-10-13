@@ -24,6 +24,9 @@ the only long wait (about 8 minutes for the cluster).
 - **Copy each grey block whole** (the copy icon at its top right) and paste it
   into the terminal. It runs line by line; you do not need to press anything
   else.
+- **Blocks start with a `cd`**, so they work from any folder. The lab keeps
+  everything in your home folder: `~/dexaflow-showcase` (the platform) and
+  `~/dexaflow-workspace` (your DAGs).
 - **A step is done when your prompt comes back** (the line ending in `$`).
 - **Yellow ⏳ lines announce a long, quiet step.** Until the next line appears
   the terminal is busy, not stuck. Do not press Ctrl+C.
@@ -95,8 +98,9 @@ components with it instead.)
 ### Task 1. Get the code and the Dexaflow CLI
 
 ```bash
+cd ~
 git clone https://github.com/neochaotic/dexaflow-showcase.git
-cd dexaflow-showcase
+cd ~/dexaflow-showcase
 make cli
 export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
@@ -139,7 +143,7 @@ gcloud config set project my-project-id
 
 That is the only setting. Every `make` target reads the project from gcloud,
 and once Task 3 has run, `make deploy` sends DAGs to GKE on its own. In a new
-terminal you only need `cd dexaflow-showcase`: `make cli` added the CLI to your
+terminal you only need `cd ~/dexaflow-showcase`: `make cli` added the CLI to your
 shell profile.
 
 `gcloud config set project` changes your default project for every gcloud
@@ -163,6 +167,7 @@ It prints **your project id**.
 ### Task 3. Create the GKE cluster
 
 ```bash
+cd ~/dexaflow-showcase
 make gke-up
 ```
 
@@ -208,6 +213,7 @@ gke-dexaflow-showcase-default-pool-...       Ready    <none>   2m    v1.3x...
 ### Task 4. Install Dexaflow Pro
 
 ```bash
+cd ~/dexaflow-showcase
 make gke-deploy
 ```
 
@@ -245,6 +251,7 @@ The UI is not exposed to the internet; you reach it through a port-forward,
 which runs in the background and reconnects on its own:
 
 ```bash
+cd ~/dexaflow-showcase
 make gke-ui
 make gke-info
 ```
@@ -302,6 +309,7 @@ is a plain Airflow 3 DAG: three TaskFlow tasks passing data through XCom.
 Nothing in it is specific to Dexaflow.
 
 ```bash
+cd ~/dexaflow-showcase
 make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
 ```
 
@@ -342,8 +350,9 @@ folder of your own, next to the clone, with its own git repository and a
 `Makefile` that deploys through the platform you just built.
 
 ```bash
+cd ~/dexaflow-showcase
 make workspace
-cd ../dexaflow-workspace
+cd ~/dexaflow-workspace
 make help
 ```
 
@@ -352,6 +361,7 @@ Now scaffold a DAG project in it, replace its `dag.py`, and deploy it.
 step; that is the single-host edition, so skip it here.)
 
 ```bash
+cd ~/dexaflow-workspace
 make new NAME=my_first_dag
 cat > dags/my_first_dag/dag.py <<'EOF'
 from airflow.sdk import DAG, task
@@ -385,10 +395,10 @@ workspace to your own Git host.
 ### Task 8. Add a dependency and a task, then redeploy
 
 Still in the workspace, add [Faker](https://faker.readthedocs.io/) to this DAG
-only, and a task that uses it. Run the block from the workspace folder itself:
-your prompt ends in `dexaflow-workspace`, not in `my_first_dag`.
+only, and a task that uses it:
 
 ```bash
+cd ~/dexaflow-workspace
 cat > dags/my_first_dag/dexaflow.yaml <<'EOF'
 schema_version: "1.0"
 dag_id: my_first_dag
@@ -440,7 +450,7 @@ Python 3.13. One shared Airflow environment cannot hold both. These DAGs live
 in the platform clone, so go back there first:
 
 ```bash
-cd ../dexaflow-showcase
+cd ~/dexaflow-showcase
 make deploy DAG=use-cases/02-dependency-isolation TRIGGER=1
 ```
 
@@ -459,8 +469,8 @@ About 20 minutes. Your DAGs query BigQuery with no key file: task pods use the
 `dexaflow-tasks` service account through Workload Identity. No DAG names your
 project; they read it from Airflow Variables.
 
-Run these commands in the platform clone: `cd ../dexaflow-showcase` if you are
-still in the workspace.
+These commands run in the platform clone; each block starts with
+`cd ~/dexaflow-showcase`.
 
 ### Task 10. Query BigQuery without a key
 
@@ -469,6 +479,7 @@ uses the stock Airflow BigQuery operators to build the top 5 US baby names per
 decade.
 
 ```bash
+cd ~/dexaflow-showcase
 make deploy DAG=use-cases/04-gcp-bigquery-report TRIGGER=1
 ```
 
@@ -493,6 +504,7 @@ bq query --use_legacy_sql=false \
 ### Task 11. Deploy the labs
 
 ```bash
+cd ~/dexaflow-showcase
 make gke-lab
 ```
 
@@ -516,6 +528,7 @@ the medallion run starts eight pods, and the cluster may add a node for them.
 ### Task 12. Run a daily ELT and its quality checks
 
 ```bash
+cd ~/dexaflow-showcase
 make deploy DAG=labs/bigquery/01-daily-sales TRIGGER=1
 make deploy DAG=labs/bigquery/02-quality-checks TRIGGER=1
 ```
@@ -579,9 +592,8 @@ while it runs.
 
 ### Task 14. Delete everything the lab created
 
-In the `dexaflow-showcase` folder:
-
 ```bash
+cd ~/dexaflow-showcase
 make gke-down
 ```
 
