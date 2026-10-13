@@ -321,7 +321,11 @@ make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
    write a Dockerfile, and your machine needs no Docker.
 2. `dexaflow push` registers `dag.json` with the control plane. The DAG appears
    in the UI.
-3. `TRIGGER=1` starts a run and waits for it to finish.
+3. `TRIGGER=1` starts a run, unpauses the DAG and waits for the run to
+   finish. Without it, the DAG is only registered, paused. A scheduled DAG
+   (`@daily` in Part 3) also gets a run of its latest day as soon as it is
+   unpaused: the UI shows it as `scheduled__<date>`, next to your
+   `manual__<time>` run.
 
 ⏳ Each image build on Cloud Build takes a minute or two, quietly: its output
 goes to `.out/build-<dag_id>.log`, and every build is listed in the console
@@ -604,6 +608,10 @@ then press Enter):
 - the Artifact Registry repository `dexaflow-showcase`
 - the BigQuery datasets `dexaflow_showcase` and `dexaflow_lab`
 - the service account `dexaflow-tasks` and its role bindings
+
+It leaves the Cloud Build API enabled, and the `<project>_cloudbuild` bucket
+that `gcloud builds submit` created for DAG sources (a few kilobytes per
+build). Delete that bucket in the console if you want nothing left.
 
 ⏳ Deleting the cluster takes about 5 minutes. **You should see** at the end:
 
