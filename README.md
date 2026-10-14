@@ -91,6 +91,16 @@ docs/               guides, presenter runbook, troubleshooting
 demo: what to prepare, the order of the use cases, what to show in the UI and
 what to do when the network fails.
 
+## Contribute to Dexaflow
+
+Dexaflow is open source. The easiest way to start is to use it and tell the
+project what you found:
+
+- Open an issue with a bug, a question or an idea in
+  [dexadata/dexaflow](https://github.com/dexadata/dexaflow/issues).
+- Improve the docs where something confused you.
+- Add an example to this repository: see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 [Apache 2.0](LICENSE).
