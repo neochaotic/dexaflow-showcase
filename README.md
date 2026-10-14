@@ -11,6 +11,8 @@ installed with Helm). Examples for **Dexaflow Lite** (single host) will follow.
 > Dexaflow is pre-1.0. This repository pins the version it was tested with in
 > [`versions.env`](versions.env).
 
+> **Saw the talk?** [PALESTRA.md](PALESTRA.md) has the links, in Portuguese.
+
 > **New here?** Follow the [hands-on lab](LAB.md): copy-and-paste
 > steps from an empty Google Cloud project to Dexaflow Pro on GKE, your own
 > DAGs and two BigQuery pipelines, in about an hour.
@@ -90,6 +92,16 @@ docs/               guides, presenter runbook, troubleshooting
 [docs/presenter-runbook.md](docs/presenter-runbook.md) is the script for a live
 demo: what to prepare, the order of the use cases, what to show in the UI and
 what to do when the network fails.
+
+## Contribute to Dexaflow
+
+Dexaflow is open source. The easiest way to start is to use it and tell the
+project what you found:
+
+- Open an issue with a bug, a question or an idea in
+  [dexadata/dexaflow](https://github.com/dexadata/dexaflow/issues).
+- Improve the docs where something confused you.
+- Add an example to this repository: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
