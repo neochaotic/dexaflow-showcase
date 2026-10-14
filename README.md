@@ -11,6 +11,8 @@ installed with Helm). Examples for **Dexaflow Lite** (single host) will follow.
 > Dexaflow is pre-1.0. This repository pins the version it was tested with in
 > [`versions.env`](versions.env).
 
+> **Saw the talk?** [PALESTRA.md](PALESTRA.md) has the links, in Portuguese.
+
 > **New here?** Follow the [hands-on lab](LAB.md): copy-and-paste
 > steps from an empty Google Cloud project to Dexaflow Pro on GKE, your own
 > DAGs and two BigQuery pipelines, in about an hour.
