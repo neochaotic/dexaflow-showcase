@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# The settings below are read by the scripts that source this file.
+# shellcheck disable=SC2034
 # GKE settings, derived from versions.env and the active gcloud project.
 source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib.sh"
 need gcloud
