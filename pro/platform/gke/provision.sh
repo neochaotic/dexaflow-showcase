@@ -80,11 +80,11 @@ if ! gcloud iam service-accounts describe "${TASK_GSA}" --project "${GCP_PROJECT
 fi
 log "Granting BigQuery job and data access to the task service account"
 for role in roles/bigquery.jobUser roles/bigquery.dataEditor; do
-  run gcloud projects add-iam-policy-binding "${GCP_PROJECT}" --condition None \
+  retry gcloud projects add-iam-policy-binding "${GCP_PROJECT}" --condition None \
     --member "serviceAccount:${TASK_GSA}" --role "${role}" >/dev/null
 done
 log "Binding it to the dexaflow-task Kubernetes ServiceAccount (Workload Identity)"
-run gcloud iam service-accounts add-iam-policy-binding "${TASK_GSA}" --project "${GCP_PROJECT}" \
+retry gcloud iam service-accounts add-iam-policy-binding "${TASK_GSA}" --project "${GCP_PROJECT}" \
   --role roles/iam.workloadIdentityUser \
   --member "serviceAccount:${GCP_PROJECT}.svc.id.goog[${NAMESPACE}/dexaflow-task]" >/dev/null
 

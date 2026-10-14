@@ -22,6 +22,19 @@ run() {
   "$@"
 }
 
+# retry runs a command up to 6 times, 10 seconds apart, showing its error only
+# when the last attempt fails. IAM needs it: a service account created a moment
+# ago is not visible to policy changes for up to a minute.
+retry() {
+  local attempt out
+  for attempt in 1 2 3 4 5 6; do
+    out="$(run "$@" 2>&1)" && return 0
+    (( attempt < 6 )) && { slow "Google Cloud is not ready yet; trying again in 10 seconds (${attempt}/5)"; sleep 10; }
+  done
+  printf '%s\n' "${out}" >&2
+  return 1
+}
+
 need() {
   command -v "$1" >/dev/null 2>&1 || die "'$1' is not installed. See docs/prerequisites.md."
 }
