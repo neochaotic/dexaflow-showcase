@@ -99,11 +99,14 @@ components with it instead.)
 
 ```bash
 cd ~
-git clone https://github.com/neochaotic/dexaflow-showcase.git
+git clone https://github.com/neochaotic/dexaflow-showcase.git || git -C ~/dexaflow-showcase pull --ff-only
 cd ~/dexaflow-showcase
 make cli
 export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
+
+If you ran the lab before, `git clone` says the folder already exists and the
+next line updates it instead.
 
 ⏳ On a machine without Python 3.11 (Cloud Shell, for example), `make cli`
 downloads one: up to 2 minutes with no output after the yellow line.
