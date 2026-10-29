@@ -96,7 +96,9 @@ deploy_dag() {
     # dependencies: Cloud Build (the remote builder gke-deploy configures on
     # the cluster) builds the dependency image once.
     slow "Deploying: seconds when only the code changed, 1 to 3 minutes for new dependencies (log: .out/build-${id}.log)"
-    run dexaflow deploy "${dir}" --server "${SERVER}" --token "${DEXAFLOW_TOKEN}" \
+    # The token comes from DEXAFLOW_TOKEN (exported above), never the command
+    # line, which run prints on screen and into the log.
+    run dexaflow deploy "${dir}" --server "${SERVER}" \
         --registry "${REGISTRY}" --yes >"${build_log}" 2>&1 \
       || { tail -30 "${build_log}" >&2; die "deploying ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
     grep -E '^(builder|Deployed|already)' "${build_log}" >&2 || true
