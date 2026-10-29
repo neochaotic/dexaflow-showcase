@@ -13,6 +13,9 @@ installed with Helm). Examples for **Dexaflow Lite** (single host) will follow.
 
 > **Saw the talk?** [PALESTRA.md](PALESTRA.md) has the links, in Portuguese.
 
+> **Giving a live demo?** [DEMO.md](DEMO.md): build everything the day
+> before, then only the UI on stage.
+
 > **New here?** Follow the [hands-on lab](LAB.md): copy-and-paste
 > steps from an empty Google Cloud project to Dexaflow Pro on GKE, your own
 > DAGs and two BigQuery pipelines, in about an hour.
@@ -84,14 +87,13 @@ use-cases/          the demo DAGs, shared by every environment
 labs/               hands-on labs (BigQuery)
 my-dags/            your own DAGs, created with make new-dag
 lite/               Dexaflow Lite examples (coming later)
-docs/               guides, presenter runbook, troubleshooting
+docs/               guides, troubleshooting
 ```
 
 ## Presenting
 
-[docs/presenter-runbook.md](docs/presenter-runbook.md) is the script for a live
-demo: what to prepare, the order of the use cases, what to show in the UI and
-what to do when the network fails.
+[DEMO.md](DEMO.md) is the script for a live demo: everything is built the day
+before, and on stage you only press Trigger in the UI.
 
 ## Contribute to Dexaflow
 

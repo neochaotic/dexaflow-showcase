@@ -1,4 +1,4 @@
-# Presenter runbook
+# Live demo: what to run
 
 > [!IMPORTANT]
 > **On stage you run no build and no deploy.** Everything is built, deployed
@@ -11,7 +11,7 @@ Run these in Cloud Shell or your own terminal, in `~/dexaflow-showcase`.
 
 | Step | Command | Time |
 |---|---|---|
-| Cluster ([LAB.md Part 0](../LAB.md#part-0-create-the-cluster-ahead-of-time)) | `make gke-up` | about 10 min |
+| Cluster ([LAB.md Part 0](LAB.md#part-0-create-the-cluster-ahead-of-time)) | `make gke-up` | about 10 min |
 | Dexaflow Pro | `make gke-deploy` | about 2 min |
 | UI in the background | `make gke-ui` | under 30 s |
 | **Build, deploy and run every DAG once** | `make gke-prebuild` | 15 to 25 min, unattended |
@@ -28,7 +28,7 @@ Also:
 ## 2. Before going on stage
 
 - [ ] In a fresh terminal, run Tasks 1 to 4 of
-      [LAB.md, Part 1](../LAB.md#part-1-set-up-gke-and-dexaflow-pro): with the
+      [LAB.md, Part 1](LAB.md#part-1-set-up-gke-and-dexaflow-pro): with the
       cluster already up they take a few minutes and rebuild nothing.
 - [ ] `make gke-ui` running, <http://localhost:8081> signed in as
       `admin@dexaflow.local` (`make gke-info` shows where the password is).
@@ -46,7 +46,7 @@ Also:
 | 1 | **The UI** | The Airflow 3 UI, unmodified, served by a Go binary | 1 min |
 | 2 | **Simple example: `showcase_hello_pipeline`** | **Trigger**. In the pods terminal, one pod per task appears and disappears. Grid view, then the XCom of `load` | 3 min |
 | 3 | **BigQuery example: `showcase_bigquery_report`** | **Trigger**. The stock Google provider operators, no key in the cluster. Then the new table `top_names_by_decade` in the BigQuery console | 4 min |
-| 4 | **Wrap up** | Everything shown is in this repository; anyone can reproduce it with [LAB.md](../LAB.md) | 1 min |
+| 4 | **Wrap up** | Everything shown is in this repository; anyone can reproduce it with [LAB.md](LAB.md) | 1 min |
 
 If there is time, also from the UI: `showcase_fan_out` (sixteen pods at once,
 Gantt view), the two pandas DAGs of `02-dependency-isolation` (pandas 1.5 and
@@ -54,7 +54,7 @@ Gantt view), the two pandas DAGs of `02-dependency-isolation` (pandas 1.5 and
 bronze, silver and gold).
 
 Writing a DAG live is optional: the steps are in
-[LAB.md, Part 2](../LAB.md#part-2-write-and-deploy-dags), and a redeploy that
+[LAB.md, Part 2](LAB.md#part-2-write-and-deploy-dags), and a redeploy that
 changes only `dag.py` takes seconds.
 
 ## When something fails
