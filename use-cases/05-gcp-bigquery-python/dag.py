@@ -1,9 +1,9 @@
 """showcase_bigquery_python: BigQuery from plain Python, no Airflow provider.
 
 The task pod gets Application Default Credentials from Workload Identity, so the
-client library needs no key and no connection. The query writes its result to
-the dexaflow_showcase.top_github_languages table, and the rows travel to the
-next task through XCom.
+client library needs no key and no connection. The query result is saved as the
+table dexaflow_showcase.top_github_languages, and travels to the next task
+through XCom.
 """
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from airflow.sdk import DAG, task
 
 MAX_BYTES_BILLED = 1_000_000_000  # 1 GB
 DATASET = "dexaflow_showcase"
-LOCATION = "US"  # where the public dataset lives
 TABLE = "top_github_languages"
 
 
@@ -23,9 +22,7 @@ def top_github_languages() -> list[dict]:
 
     project = os.environ["AIRFLOW_VAR_GCP_PROJECT"]
     client = bigquery.Client(project=project)
-    dataset = bigquery.Dataset(f"{project}.{DATASET}")
-    dataset.location = LOCATION
-    client.create_dataset(dataset, exists_ok=True)
+    client.create_dataset(bigquery.Dataset(f"{project}.{DATASET}"), exists_ok=True)
     sql = """
         SELECT repository_language AS language, COUNT(*) AS repos
         FROM `bigquery-public-data.samples.github_timeline`
@@ -34,14 +31,13 @@ def top_github_languages() -> list[dict]:
         ORDER BY repos DESC
         LIMIT 10
     """
-    config = bigquery.QueryJobConfig(
-        destination=f"{project}.{DATASET}.{TABLE}",
-        write_disposition="WRITE_TRUNCATE",
+    job = client.query(sql, job_config=bigquery.QueryJobConfig(
         maximum_bytes_billed=MAX_BYTES_BILLED,
-    )
-    job = client.query(sql, job_config=config)
+        destination=f"{project}.{DATASET}.{TABLE}",
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+    ))
     rows = [dict(r) for r in job.result()]
-    print(f"job {job.job_id}: {job.total_bytes_processed} bytes processed, {len(rows)} rows in {DATASET}.{TABLE}")
+    print(f"job {job.job_id}: {job.total_bytes_processed} bytes processed, saved to {DATASET}.{TABLE}")
     return rows
 
 
