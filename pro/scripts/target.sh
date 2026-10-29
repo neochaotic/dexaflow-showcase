@@ -87,12 +87,18 @@ deploy_dag() {
   local version
   version="$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}"
   if [[ "${DEXAFLOW_BUILDER:-docker}" == "cloudbuild" ]]; then
-    # GKE: Cloud Build builds and pushes the image; no local Docker involved.
-    slow "Building the image on Cloud Build: 1 to 2 minutes (log: .out/build-${id}.log)"
-    run dexaflow compile "${dir}" --image "${image}" --build --push --dag-version "${version}" \
-        --builder "${REPO_ROOT}/pro/scripts/cloudbuild-builder.sh" \
-        -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1 \
-      || { tail -30 "${build_log}" >&2; die "building ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
+    # GKE: `dexaflow deploy` builds only what changed, with no local Docker.
+    # Unchanged DAG: nothing is built. Only dag.py or sql/ changed: the code is
+    # pushed as one layer on the cached dependency image, in seconds. New
+    # dependencies: Cloud Build (the remote builder gke-deploy configures on
+    # the cluster) builds the dependency image once.
+    slow "Deploying: seconds when only the code changed, 1 to 3 minutes for new dependencies (log: .out/build-${id}.log)"
+    run dexaflow deploy "${dir}" --server "${SERVER}" --token "${DEXAFLOW_TOKEN}" \
+        --registry "${REGISTRY}" --yes >"${build_log}" 2>&1 \
+      || { tail -30 "${build_log}" >&2; die "deploying ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
+    grep -E '^(builder|Deployed|already)' "${build_log}" >&2 || true
+    ok "${id} deployed: ${SERVER}/dags/${id}"
+    return 0
   else
     # Docker's layer-by-layer progress goes to a log; it is shown only on failure.
     slow "Compiling and building the image: up to 2 minutes the first time (log: .out/build-${id}.log)"

@@ -65,6 +65,8 @@ run helm upgrade --install "${RELEASE}" "${DEXAFLOW_CHART}" --version "${DEXAFLO
   -f "${GKE_SECRETS}" \
   --set taskNamespace="${NAMESPACE}" \
   --set-string "taskServiceAccount.annotations.iam\.gke\.io/gcp-service-account=${TASK_GSA}" \
+  --set deploy.defaults.remoteBuilder.cloudBuild.project="${GCP_PROJECT}" \
+  --set deploy.defaults.remoteBuilder.cloudBuild.region="${GKE_REGION}" \
   --wait --timeout 10m >"${REPO_ROOT}/.out/helm-install.log" 2>&1 \
   || { cat "${REPO_ROOT}/.out/helm-install.log" >&2; die "helm install failed (log: .out/helm-install.log)"; }
 # The chart's long install notes (port 8080, TLS, network policy) are for
