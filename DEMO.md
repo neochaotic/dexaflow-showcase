@@ -45,13 +45,23 @@ Also:
 |---|---|---|---|
 | 1 | **The UI** | The Airflow 3 UI, unmodified, served by a Go binary | 1 min |
 | 2 | **Simple example: `showcase_hello_pipeline`** | **Trigger**. In the pods terminal, one pod per task appears and disappears. Grid view, then the XCom of `load` | 3 min |
-| 3 | **BigQuery example: `showcase_bigquery_report`** | **Trigger**. The stock Google provider operators, no key in the cluster. Then the new table `top_names_by_decade` in the BigQuery console | 4 min |
+| 3 | **BigQuery example: `showcase_bigquery_python`** | **Trigger**. A Python task with the `google-cloud-bigquery` client, no key in the cluster (Workload Identity). The ranked languages in the logs of `summarize`, the job id and bytes processed in the logs of `top_github_languages` | 4 min |
 | 4 | **Wrap up** | Everything shown is in this repository; anyone can reproduce it with [LAB.md](LAB.md) | 1 min |
 
-If there is time, also from the UI: `showcase_fan_out` (sixteen pods at once,
-Gantt view), the two pandas DAGs of `02-dependency-isolation` (pandas 1.5 and
+If there is time, also from the UI: the two pandas DAGs of `02-dependency-isolation` (pandas 1.5 and
 2.2, both green), or `lab_medallion_daily` (4 million events into BigQuery
 bronze, silver and gold).
+
+> [!WARNING]
+> **Known issues on Dexaflow 0.5.7.**
+> - The BigQuery operator DAGs (`showcase_bigquery_report` and the BigQuery
+>   labs) fail with `NotProvidedError: the DAG run has no attribute
+>   'start_date'` ([dexadata/dexaflow#1843](https://github.com/dexadata/dexaflow/issues/1843)):
+>   the Google provider reads `dag_run.start_date`, which Dexaflow does not
+>   provide yet. Show `showcase_bigquery_python` instead.
+> - `showcase_fan_out` starts sixteen pods at once and saturates the single
+>   node until the cluster grows, which can drop the UI connection. Keep it
+>   out of the live part.
 
 Writing a DAG live is optional: the steps are in
 [LAB.md, Part 2](LAB.md#part-2-write-and-deploy-dags), and a redeploy that
