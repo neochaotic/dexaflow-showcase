@@ -11,16 +11,16 @@ should see. If what you see differs, see [Troubleshooting](#troubleshooting).
 
 | Part | You will | Time |
 |---|---|---|
-| ⏱ [1. Prepare GKE and Dexaflow Pro](#part-1-prepare-gke-and-dexaflow-pro-ahead-of-time) | **ahead of time:** install the CLI, create the cluster, install Dexaflow Pro | 15 min, 10 of them waiting |
-| [2. Open the Airflow UI](#part-2-open-the-airflow-ui) | connect to the running environment and sign in | 5 min |
-| [3. Write and deploy DAGs](#part-3-write-and-deploy-dags) | deploy a DAG, create your own workspace, write a DAG, add a dependency and redeploy | 15 min |
-| [4. BigQuery pipelines](#part-4-bigquery-pipelines) | query BigQuery keylessly, run a daily ELT and a 4 million event medallion pipeline | 20 min |
-| [5. Clean up](#part-5-clean-up) | delete everything the lab created | 5 min |
+| ⏱ **[0. Create the cluster ahead of time](#part-0-create-the-cluster-ahead-of-time)** | **before the session:** create the GKE cluster | 10 min, unattended |
+| [1. Set up GKE and Dexaflow Pro](#part-1-set-up-gke-and-dexaflow-pro) | install the CLI, connect to the cluster, install Dexaflow Pro, open the Airflow UI | 10 min |
+| [2. Write and deploy DAGs](#part-2-write-and-deploy-dags) | deploy a DAG, create your own workspace, write a DAG, add a dependency and redeploy | 15 min |
+| [3. BigQuery pipelines](#part-3-bigquery-pipelines) | query BigQuery keylessly, run a daily ELT and a 4 million event medallion pipeline | 20 min |
+| [4. Clean up](#part-4-clean-up) | delete everything the lab created | 5 min |
 
-Do the parts in order: each one starts where the previous one ended. Part 1 is
-the only long wait, so you can run it ahead of time (the day before a class or
-a demo) and leave the cluster up: Part 2 then picks it up from any new
-terminal.
+Do the parts in order: each one starts where the previous one ended. The only
+long wait is creating the cluster (about 10 minutes), so
+[Part 0](#part-0-create-the-cluster-ahead-of-time) does it before the session
+starts. If you skip Part 0, Task 3 creates the cluster instead.
 
 ## How to follow this lab
 
@@ -45,7 +45,7 @@ terminal.
 - A Google Cloud project with billing enabled, where you have the **Owner**
   role (or Editor plus Project IAM Admin).
 - A terminal: [Cloud Shell](https://shell.cloud.google.com/) has every tool
-  already, or use your own macOS or Linux machine ([Part 1](#part-1-prepare-gke-and-dexaflow-pro-ahead-of-time) lists what to install).
+  already, or use your own macOS or Linux machine ([Part 1](#part-1-set-up-gke-and-dexaflow-pro) lists what to install).
 - Basic Airflow knowledge: what a DAG and a task are.
 
 ## What it costs
@@ -54,7 +54,7 @@ One `e2-standard-2` node (the cluster can grow to 3 under load), the GKE
 cluster fee, a small Artifact Registry repository, a few Cloud Build image
 builds (within its free monthly minutes) and a few BigQuery jobs, each capped at
 1 GB billed. Running the whole lab in one sitting costs a few US
-dollars at most. [Part 5](#part-5-clean-up) stops all cost; do it even if you stop
+dollars at most. [Part 4](#part-4-clean-up) stops all cost; do it even if you stop
 halfway.
 
 ## What you will build
@@ -71,17 +71,47 @@ make gke-ui ◀── port-forward ────   │  Postgres, Redis (in the c
 
 For how the environment is built and how production differs, see [docs/gke.md](docs/gke.md).
 
-## Part 1. Prepare GKE and Dexaflow Pro (ahead of time)
+## Part 0. Create the cluster ahead of time
 
 > [!IMPORTANT]
-> **Run this part ahead of time.** It takes about 15 minutes, 10 of them
-> waiting for the cluster, too long for a live session. Once it is done the
-> cluster stays up until [Part 5](#part-5-clean-up), and costs a few US
-> dollars a day while it runs.
+> **Run this part before the session, not during it.** It is the lab's only
+> long wait: about 10 minutes, unattended. The cluster costs a few US dollars a
+> day while it runs, so create it shortly before (the day before a class or a
+> demo is fine) and delete it with [Part 4](#part-4-clean-up) afterwards.
 >
-> **Cluster already up?** Skip to [Part 2](#part-2-open-the-airflow-ui).
+> **Cluster already up?** Go straight to [Part 1](#part-1-set-up-gke-and-dexaflow-pro).
 
-At the end of this part Dexaflow Pro runs on GKE.
+Run it in Cloud Shell or in your own terminal (see
+[Choose where to run the commands](#choose-where-to-run-the-commands)). Replace
+`my-project-id` with your project id:
+
+```bash
+cd ~
+git clone https://github.com/neochaotic/dexaflow-showcase.git || git -C ~/dexaflow-showcase pull --ff-only
+cd ~/dexaflow-showcase
+gcloud config set project my-project-id
+make gke-up
+```
+
+`make gke-up` enables the APIs and creates the cluster and everything
+[Task 3](#task-3-connect-to-the-gke-cluster) lists. ⏳ Creating the cluster
+takes about 8 minutes, while gcloud shows only a spinner.
+
+**You should see** at the end:
+
+```
+✔ GKE environment ready: cluster dexaflow-showcase in my-project-id
+   Next: make gke-deploy
+```
+
+Stop here. Part 1 starts from this cluster, in the same or another terminal.
+
+---
+
+## Part 1. Set up GKE and Dexaflow Pro
+
+About 10 minutes, with the cluster from Part 0 already running. At the end you
+have Dexaflow Pro running on GKE and the Airflow UI open in your browser.
 
 ### Choose where to run the commands
 
@@ -177,7 +207,7 @@ gcloud config get-value project
 
 It prints **your project id**.
 
-### Task 3. Create the GKE cluster
+### Task 3. Connect to the GKE cluster
 
 ```bash
 cd ~/dexaflow-showcase
@@ -185,7 +215,8 @@ make gke-up
 ```
 
 The script prints every command it runs with a `$` in front, so you can see
-exactly what it does. It enables the APIs, then creates:
+exactly what it does. It enables the APIs, then creates what is missing and
+skips what already exists:
 
 | Resource | Name | Why |
 |---|---|---|
@@ -195,20 +226,25 @@ exactly what it does. It enables the APIs, then creates:
 | Workload Identity binding | `dexaflow/dexaflow-task` | task pods act as `dexaflow-tasks` with no key file |
 | Cloud Build API and push permission | Cloud Build's default service account | builds each DAG image and pushes it to the repository, so your machine needs no Docker |
 
-⏳ **This is the long step: about 10 minutes in all.** Enabling the APIs can take
-2 minutes, then creating the cluster about 8, while gcloud shows only a
-spinner. Running `make gke-up` again is safe: it skips what already exists.
+With the cluster from [Part 0](#part-0-create-the-cluster-ahead-of-time) this
+takes about a minute: it reuses the cluster, re-applies the permissions and
+writes `.out/gke.env`, which every later `make` target reads. Always run it: a
+new clone (in another Cloud Shell, for example) has no `.out/gke.env` yet.
+⏳ If you skipped Part 0, this step creates the cluster: about 10
+minutes, while gcloud shows only a spinner.
 
 **You should see** at the end:
 
 ```
+WARN Cluster dexaflow-showcase already exists in my-project-id: reusing it.
+WARN Whatever is deployed on it stays (DAGs, runs). For an empty Dexaflow: make gke-reset.
+...
 ✔ GKE environment ready: cluster dexaflow-showcase in my-project-id
    Next: make gke-deploy
 ```
 
-If a yellow `WARN Cluster dexaflow-showcase already exists` line showed up
-instead of the cluster creation, this project already had the lab's cluster
-with whatever was deployed on it; see [Troubleshooting](#troubleshooting).
+The two yellow `WARN` lines are expected with a cluster from Part 0. Without
+Part 0 they do not show up, and the cluster creation runs in their place.
 
 **Check your progress**
 
@@ -239,6 +275,10 @@ another clone of the repo reuses it.
 ⏳ After the `Installing Dexaflow Pro` line, Helm waits until every Dexaflow pod
 runs: 2 to 5 minutes with no output.
 
+If Dexaflow was already installed on this cluster from another clone, two yellow
+`WARN Dexaflow is already installed on this cluster` lines show up first: it
+restores the same login and database from the cluster, then upgrades in place.
+
 **You should see** at the end:
 
 ```
@@ -257,32 +297,6 @@ kubectl -n dexaflow get pods
 The `dexaflow-...`, `postgres-...` and `redis-...` pods show **`1/1`** and
 **`Running`**. If DAGs already ran on this cluster, you also see `Completed` task
 pods (named `leoflow-...`, the project's former name).
-
-## Part 2. Open the Airflow UI
-
-About 5 minutes. At the end the Airflow UI is open in your browser.
-
-> [!TIP]
-> **Coming back to a cluster that is already up** (a new Cloud Shell session,
-> the day of the demo, another machine)? Run this block first, then go on with
-> Task 5. Replace `my-project-id` with your project id.
->
-> ```bash
-> cd ~
-> git clone https://github.com/neochaotic/dexaflow-showcase.git || git -C ~/dexaflow-showcase pull --ff-only
-> cd ~/dexaflow-showcase
-> make cli
-> export PATH="$HOME/.dexaflow/bin:$PATH"
-> gcloud config set project my-project-id
-> make gke-up gke-deploy
-> ```
->
-> `make gke-up` prints a yellow **`WARN Cluster dexaflow-showcase already
-> exists ... reusing it`** and finishes in about a minute; `make gke-deploy`
-> keeps the same admin password and finishes in 1 to 3 minutes. Both end with
-> the green ✔ lines of Tasks 3 and 4.
->
-> If you came straight from Part 1, skip this block.
 
 ### Task 5. Open the Airflow UI
 
@@ -335,7 +349,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8081/readyz
 
 It prints **`200`**, and the browser shows the Airflow 3 UI, with no DAGs yet.
 
-## Part 3. Write and deploy DAGs
+## Part 2. Write and deploy DAGs
 
 About 15 minutes. You deploy an existing DAG, write your own, then change it the
 way you would change any Airflow DAG.
@@ -362,7 +376,7 @@ make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
    in the UI.
 3. `TRIGGER=1` starts a run, unpauses the DAG and waits for the run to
    finish. Without it, the DAG is only registered, paused. A scheduled DAG
-   (`@daily` in Part 4) also gets a run of its latest day as soon as it is
+   (`@daily` in Part 3) also gets a run of its latest day as soon as it is
    unpaused: the UI shows it as `scheduled__<date>`, next to your
    `manual__<time>` run.
 
@@ -506,7 +520,7 @@ make deploy DAG=use-cases/02-dependency-isolation TRIGGER=1
 
 Each task log prints the pandas version it ran with.
 
-## Part 4. BigQuery pipelines
+## Part 3. BigQuery pipelines
 
 About 20 minutes. Your DAGs query BigQuery with no key file: task pods use the
 `dexaflow-tasks` service account through Workload Identity. No DAG names your
@@ -628,7 +642,7 @@ two `gold_*` tables a few rows each.
 exercises: [BigQuery lab](labs/bigquery/README.md#exercises),
 [medallion lab](labs/medallion/README.md#exercises).
 
-## Part 5. Clean up
+## Part 4. Clean up
 
 About 5 minutes. Do this even if you stopped halfway: the cluster costs money
 while it runs.
@@ -658,7 +672,7 @@ build). Delete that bucket in the console if you want nothing left.
 ✔ GKE demo environment removed from my-project-id
 ```
 
-If you changed `LAB_DATASET` in Part 4, delete that dataset too:
+If you changed `LAB_DATASET` in Part 3, delete that dataset too:
 `bq rm -r -f -d my_lab`.
 
 **Check your progress**

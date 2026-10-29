@@ -9,8 +9,9 @@
 
 ## Before going on stage
 
-- [ ] In a fresh terminal (Cloud Shell included), run the *Coming back to a
-      cluster that is already up* block of [LAB.md, Part 2](../LAB.md#part-2-open-the-airflow-ui).
+- [ ] In a fresh terminal (Cloud Shell included), run Tasks 1 to 4 of
+      [LAB.md, Part 1](../LAB.md#part-1-set-up-gke-and-dexaflow-pro): with the
+      cluster from Part 0 they take a few minutes.
 - [ ] `make gke-ui` running, <http://localhost:8081> signed in (`make gke-info`).
       In Cloud Shell, Web Preview on port **8081**, not 8080.
 - [ ] A DAG workspace ready (`make workspace`), with an editor open on it.
@@ -30,7 +31,7 @@
 6. **Write a DAG live** (4 min). In the workspace: `make new NAME=live_demo`,
    edit `dag.py` (add a task, or a dependency in `dexaflow.yaml`), then
    `make deploy DAG=dags/live_demo TRIGGER=1`. The new version shows in the UI;
-   the steps are in [LAB.md, Part 3](../LAB.md#part-3-write-and-deploy-dags).
+   the steps are in [LAB.md, Part 2](../LAB.md#part-2-write-and-deploy-dags).
 7. **Medallion** (optional, 3 min). `lab_medallion_daily`: eight DuckDB pods
    generate 4 million events into BigQuery bronze, silver and gold. Show the Gantt.
 8. **Wrap up** (1 min). Everything shown is in this repository; anyone can
