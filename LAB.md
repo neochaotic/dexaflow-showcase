@@ -552,7 +552,7 @@ These commands run in the platform clone; each block starts with
 > provider's BigQuery operator, and their runs fail with `NotProvidedError: the
 > DAG run has no attribute 'start_date'`
 > ([dexadata/dexaflow#1843](https://github.com/dexadata/dexaflow/issues/1843)).
-> To query BigQuery on 0.5.7, deploy `use-cases/05-bigquery-python` instead: it
+> To query BigQuery on 0.5.7, deploy `use-cases/05-gcp-bigquery-python` instead: it
 > uses the `google-cloud-bigquery` client from a Python task and runs green.
 
 ### Task 10. Query BigQuery without a key

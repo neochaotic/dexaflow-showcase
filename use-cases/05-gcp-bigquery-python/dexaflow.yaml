@@ -6,9 +6,10 @@ tags:
   - showcase
   - gcp
 python_version: "3.12"
-# Without a floor, uv can fall back to a 2021 provider that breaks on Airflow 3.
+# Pinned: without a floor uv picks a 2021 provider that breaks on Airflow 3,
+# and an exact pin lets a code-only change reuse the dependency image.
 dependencies:
-  - apache-airflow-providers-google>=18
+  - apache-airflow-providers-google==22.8.0
   - google-cloud-bigquery==3.27.0
 variables:
   - GCP_PROJECT
