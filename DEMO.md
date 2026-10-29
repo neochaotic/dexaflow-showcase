@@ -48,7 +48,7 @@ Also:
 |---|---|---|---|
 | 1 | **The UI** | The Airflow 3 UI, unmodified, served by a Go binary | 1 min |
 | 2 | **Simple example: `showcase_hello_pipeline`** | **Trigger**. In the pods terminal, one pod per task appears and disappears. Grid view, then the XCom of `load` | 3 min |
-| 3 | **BigQuery example: `showcase_bigquery_python`** | **Trigger**. A Python task with the `google-cloud-bigquery` client, no key in the cluster (Workload Identity). The ranked languages in the logs of `summarize`, the job id and bytes processed in the logs of `top_github_languages` | 4 min |
+| 3 | **BigQuery example: `showcase_bigquery_python`** | **Trigger**. A Python task with the `google-cloud-bigquery` client, no key in the cluster (Workload Identity). The ranked languages in the logs of `summarize`, the job id and bytes processed in the logs of `top_github_languages`, then the table `dexaflow_showcase.top_github_languages` in the BigQuery console | 4 min |
 | 4 | **Wrap up** | Everything shown is in this repository; anyone can reproduce it with [LAB.md](LAB.md) | 1 min |
 
 If there is time, also from the UI: the two pandas DAGs of

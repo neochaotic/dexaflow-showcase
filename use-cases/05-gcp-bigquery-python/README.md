@@ -7,5 +7,6 @@ own pinned dependency and Python version, authenticated by Workload Identity.
 
 **Run:** `make gke-ui` in one terminal, then `make gke-demo USE_CASE=05-gcp-bigquery-python`.
 
-**What to look at:** the ranked list in the logs of `summarize`, and the job id
-and bytes processed in the logs of `top_github_languages`.
+**What to look at:** the ranked list in the logs of `summarize`, the job id
+and bytes processed in the logs of `top_github_languages`, and the new table
+`dexaflow_showcase.top_github_languages` in the BigQuery console.
