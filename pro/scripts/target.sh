@@ -8,6 +8,9 @@ if [[ -z "${DEXAFLOW_TARGET:-}" ]]; then
   if [[ -f "${REPO_ROOT}/.out/gke.env" ]]; then DEXAFLOW_TARGET=gke; else DEXAFLOW_TARGET=local; fi
 fi
 log "Target: ${DEXAFLOW_TARGET} (set DEXAFLOW_TARGET=local or gke to choose)"
+# The dexaflow CLI (0.5.7+) reads DEXAFLOW_TARGET as the name of one of its own
+# targets and fails on "gke"; keep ours out of the environment it inherits.
+export -n DEXAFLOW_TARGET
 if [[ "${DEXAFLOW_TARGET}" == "gke" ]]; then
   [[ -f "${REPO_ROOT}/.out/gke.env" ]] || die "run 'make gke-up gke-deploy' first"
   # shellcheck disable=SC1091
@@ -87,12 +90,20 @@ deploy_dag() {
   local version
   version="$(git -C "${dir}" describe --always --dirty 2>/dev/null || echo dev)-${tag}"
   if [[ "${DEXAFLOW_BUILDER:-docker}" == "cloudbuild" ]]; then
-    # GKE: Cloud Build builds and pushes the image; no local Docker involved.
-    slow "Building the image on Cloud Build: 1 to 2 minutes (log: .out/build-${id}.log)"
-    run dexaflow compile "${dir}" --image "${image}" --build --push --dag-version "${version}" \
-        --builder "${REPO_ROOT}/pro/scripts/cloudbuild-builder.sh" \
-        -o "${REPO_ROOT}/.out/dags/${id}.json" >"${build_log}" 2>&1 \
-      || { tail -30 "${build_log}" >&2; die "building ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
+    # GKE: `dexaflow deploy` builds only what changed, with no local Docker.
+    # Unchanged DAG: nothing is built. Only dag.py or sql/ changed: the code is
+    # pushed as one layer on the cached dependency image, in seconds. New
+    # dependencies: Cloud Build (the remote builder gke-deploy configures on
+    # the cluster) builds the dependency image once.
+    slow "Deploying: seconds when only the code changed, 1 to 3 minutes for new dependencies (log: .out/build-${id}.log)"
+    # The token comes from DEXAFLOW_TOKEN (exported above), never the command
+    # line, which run prints on screen and into the log.
+    run dexaflow deploy "${dir}" --server "${SERVER}" \
+        --registry "${REGISTRY}" --yes >"${build_log}" 2>&1 \
+      || { tail -30 "${build_log}" >&2; die "deploying ${id} failed; the error is above (full log: .out/build-${id}.log)"; }
+    grep -E '^(builder|Deployed|already)' "${build_log}" >&2 || true
+    ok "${id} deployed: ${SERVER}/dags/${id}"
+    return 0
   else
     # Docker's layer-by-layer progress goes to a log; it is shown only on failure.
     slow "Compiling and building the image: up to 2 minutes the first time (log: .out/build-${id}.log)"

@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 SCRIPTS := pro/scripts
 USE_CASE ?= all
 
-.PHONY: help cli doctor workspace dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-ui-stop gke-info gke-demo gke-lab gke-reset gke-down
+.PHONY: help cli doctor workspace dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-ui-stop gke-info gke-demo gke-lab gke-prebuild gke-reset gke-down
 
 help: ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -57,6 +57,11 @@ gke-demo: ## Build, register and trigger the use cases on GKE (needs make gke-ui
 gke-lab: ## Deploy every lab on GKE, run the BigQuery lab setup and one medallion day
 	@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/deploy-dags.sh labs/bigquery/01-daily-sales labs/bigquery/02-quality-checks
 	@DEXAFLOW_TARGET=gke TRIGGER=1 bash $(SCRIPTS)/deploy-dags.sh labs/bigquery/00-setup labs/medallion
+
+gke-prebuild: ## The day before a live session: build, register and run every use case and lab once
+	@# One failing DAG must not stop the rest (the BigQuery operator DAGs fail on 0.5.7, #1843).
+	-@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/demo.sh all
+	-@$(MAKE) --no-print-directory gke-lab
 
 gke-reset: ## Empty the Dexaflow database on GKE (DAGs, runs); keeps cluster, login, BigQuery
 	@bash pro/platform/gke/reset.sh

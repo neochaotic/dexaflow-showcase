@@ -8,6 +8,10 @@ tags:
 python_version: "3.11"
 connectors:
   - gcp
+# Pinned: without a floor uv picks a 2021 provider that breaks on Airflow 3,
+# and an exact pin lets a code-only change reuse the dependency image.
+dependencies:
+  - apache-airflow-providers-google==22.8.0
 connections:
   - google_cloud_default
 variables:

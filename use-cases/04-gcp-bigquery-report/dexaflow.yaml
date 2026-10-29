@@ -9,6 +9,10 @@ python_version: "3.11"
 # Expands at compile time to apache-airflow-providers-google.
 connectors:
   - gcp
+# Pinned: without a floor uv picks a 2021 provider that breaks on Airflow 3,
+# and an exact pin lets a code-only change reuse the dependency image.
+dependencies:
+  - apache-airflow-providers-google==22.8.0
 # Keyless connection (Workload Identity) and the project Variable, both created by
 # `make gke-demo`. Declared so the server delivers them to the task pods.
 connections:
