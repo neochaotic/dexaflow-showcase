@@ -93,6 +93,8 @@ gcloud config set project my-project-id
 make gke-up
 ```
 
+⏱ Measured: **about 10:00** for a new cluster.
+
 `make gke-up` enables the APIs and creates the cluster and everything
 [Task 3](#task-3-connect-to-the-gke-cluster) lists. ⏳ Creating the cluster
 takes about 8 minutes, while gcloud shows only a spinner.
@@ -216,6 +218,8 @@ cd ~/dexaflow-showcase
 make gke-up
 ```
 
+⏱ Measured: **0:41** with the cluster from Part 0 already up.
+
 The script prints every command it runs with a `$` in front, so you can see
 exactly what it does. It enables the APIs, then creates what is missing and
 skips what already exists:
@@ -268,6 +272,8 @@ cd ~/dexaflow-showcase
 make gke-deploy
 ```
 
+⏱ Measured: **about 2:00** for a first install.
+
 This runs Postgres and Redis inside the cluster (enough for a lab; production
 uses Cloud SQL and Memorystore, see [docs/gke.md](docs/gke.md)), then installs the
 Dexaflow Pro Helm chart. It generates an admin password into
@@ -310,6 +316,8 @@ cd ~/dexaflow-showcase
 make gke-ui
 make gke-info
 ```
+
+⏱ Measured: **under 0:30**.
 
 Your prompt comes back right away: the port-forward keeps running in the
 background. **You should see:**
@@ -367,6 +375,8 @@ Nothing in it is specific to Dexaflow.
 cd ~/dexaflow-showcase
 make deploy DAG=use-cases/01-hello-pipeline TRIGGER=1
 ```
+
+⏱ Measured: **4:54** the first time (image build); **0:41** when only the code changed.
 
 `make deploy` runs the whole Dexaflow loop and prints each command:
 
@@ -439,6 +449,8 @@ EOF
 make deploy DAG=dags/my_first_dag TRIGGER=1
 ```
 
+⏱ Measured: **0:56**.
+
 A DAG project is two files. `dag.py` is the DAG. `dexaflow.yaml` is its build
 config: the DAG id, the Python version and the dependencies (none yet).
 
@@ -493,6 +505,8 @@ EOF
 make deploy DAG=dags/my_first_dag TRIGGER=1
 ```
 
+⏱ Measured: **1:16** (new dependency, so a new image).
+
 Only this DAG's image has Faker. In a classic Airflow deployment every DAG
 shares one Python environment, so one DAG's dependency can break another.
 
@@ -513,6 +527,8 @@ cd ~/dexaflow-showcase
 make deploy DAG=use-cases/02-dependency-isolation TRIGGER=1
 ```
 
+⏱ Measured: **7:06** (two images with pandas).
+
 **Check your progress**
 
 ```
@@ -530,6 +546,14 @@ project; they read it from Airflow Variables.
 
 These commands run in the platform clone; each block starts with
 `cd ~/dexaflow-showcase`.
+
+> [!WARNING]
+> **Known issue on Dexaflow 0.5.7.** The DAGs of Tasks 10 to 13 use the Google
+> provider's BigQuery operator, and their runs fail with `NotProvidedError: the
+> DAG run has no attribute 'start_date'`
+> ([dexadata/dexaflow#1843](https://github.com/dexadata/dexaflow/issues/1843)).
+> To query BigQuery on 0.5.7, deploy `use-cases/05-bigquery-python` instead: it
+> uses the `google-cloud-bigquery` client from a Python task and runs green.
 
 ### Task 10. Query BigQuery without a key
 

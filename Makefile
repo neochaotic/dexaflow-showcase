@@ -59,8 +59,9 @@ gke-lab: ## Deploy every lab on GKE, run the BigQuery lab setup and one medallio
 	@DEXAFLOW_TARGET=gke TRIGGER=1 bash $(SCRIPTS)/deploy-dags.sh labs/bigquery/00-setup labs/medallion
 
 gke-prebuild: ## The day before a live session: build, register and run every use case and lab once
-	@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/demo.sh all
-	@$(MAKE) --no-print-directory gke-lab
+	@# One failing DAG must not stop the rest (the BigQuery operator DAGs fail on 0.5.7, #1843).
+	-@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/demo.sh all
+	-@$(MAKE) --no-print-directory gke-lab
 
 gke-reset: ## Empty the Dexaflow database on GKE (DAGs, runs); keeps cluster, login, BigQuery
 	@bash pro/platform/gke/reset.sh

@@ -11,14 +11,17 @@ Run these in Cloud Shell or your own terminal, in `~/dexaflow-showcase`.
 
 | Step | Command | Time |
 |---|---|---|
-| Cluster ([LAB.md Part 0](LAB.md#part-0-create-the-cluster-ahead-of-time)) | `make gke-up` | about 10 min |
-| Dexaflow Pro | `make gke-deploy` | about 2 min |
-| UI in the background | `make gke-ui` | under 30 s |
-| **Build, deploy and run every DAG once** | `make gke-prebuild` | 15 to 25 min, unattended |
+| Cluster ([LAB.md Part 0](LAB.md#part-0-create-the-cluster-ahead-of-time)) | `make gke-up` | 10:00 (0:41 if it is already up) |
+| Dexaflow Pro | `make gke-deploy` | 2:00 |
+| UI in the background | `make gke-ui` | under 0:30 |
+| **Build, deploy and run every DAG once** | `make gke-prebuild` | 18:24, unattended |
 
 `make gke-prebuild` builds each DAG image, registers it and runs it once, so
 the images are in Artifact Registry and on the node, and every DAG has a green
-run to show. Check that every DAG in the UI has a green run.
+run to show. Check that `showcase_hello_pipeline` and `showcase_bigquery_python`
+have a green run; `showcase_bigquery_report` fails on 0.5.7 (see the known issues
+below), so pause it in the UI to keep the DAG list green. A hello run triggered
+from the UI after the prebuild takes about 1 minute.
 
 Also:
 
@@ -48,9 +51,8 @@ Also:
 | 3 | **BigQuery example: `showcase_bigquery_python`** | **Trigger**. A Python task with the `google-cloud-bigquery` client, no key in the cluster (Workload Identity). The ranked languages in the logs of `summarize`, the job id and bytes processed in the logs of `top_github_languages` | 4 min |
 | 4 | **Wrap up** | Everything shown is in this repository; anyone can reproduce it with [LAB.md](LAB.md) | 1 min |
 
-If there is time, also from the UI: the two pandas DAGs of `02-dependency-isolation` (pandas 1.5 and
-2.2, both green), or `lab_medallion_daily` (4 million events into BigQuery
-bronze, silver and gold).
+If there is time, also from the UI: the two pandas DAGs of
+`02-dependency-isolation` (pandas 1.5 and 2.2, both green).
 
 > [!WARNING]
 > **Known issues on Dexaflow 0.5.7.**
@@ -65,7 +67,7 @@ bronze, silver and gold).
 
 Writing a DAG live is optional: the steps are in
 [LAB.md, Part 2](LAB.md#part-2-write-and-deploy-dags), and a redeploy that
-changes only `dag.py` takes seconds.
+changes only `dag.py` takes about 0:40.
 
 ## When something fails
 
