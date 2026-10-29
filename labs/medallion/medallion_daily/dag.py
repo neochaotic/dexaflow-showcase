@@ -23,8 +23,6 @@ from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCreateEmptyDatasetOperator,
     BigQueryInsertJobOperator,
 )
-# durable=False: the Dexaflow runtime (0.5.2, 0.5.3) does not support the provider's
-# resumable-job path yet (its task instance lacks `stats_tags`).
 from airflow.sdk import DAG, Param, task
 
 PROJECT = "{{ var.value.GCP_PROJECT }}"
@@ -48,7 +46,6 @@ GENERATE_SQL = sql("generate_shard.duckdb")
 
 def bq(task_id: str) -> BigQueryInsertJobOperator:
     return BigQueryInsertJobOperator(
-        durable=False,
         task_id=task_id, project_id=PROJECT, location=LOCATION,
         configuration={"query": {"query": sql(task_id), "useLegacySql": False,
                                  "maximumBytesBilled": MAX_BYTES_BILLED}},

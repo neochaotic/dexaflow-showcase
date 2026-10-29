@@ -114,7 +114,7 @@ downloads one: up to 2 minutes with no output after the yellow line.
 **You should see** at the end:
 
 ```
-✔ Dexaflow CLI 0.5.3 is ready
+✔ Dexaflow CLI 0.5.7 is ready
 ==> New terminals find dexaflow on their own. In this one, run:
    Next: export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
@@ -132,7 +132,7 @@ dexaflow version
 make doctor
 ```
 
-`dexaflow version` prints **`0.5.3`**. `make doctor` prints **`ok`** for every
+`dexaflow version` prints **`0.5.7`**. `make doctor` prints **`ok`** for every
 tool and the account you are signed in with; `k3d` and `kubeconform` show
 `skip`, they are not needed for this lab.
 
@@ -232,7 +232,7 @@ runs: 2 to 5 minutes with no output.
 **You should see** at the end:
 
 ```
-✔ Dexaflow Pro 0.5.3 is running on dexaflow-showcase
+✔ Dexaflow Pro 0.5.7 is running on dexaflow-showcase
 ==> The UI is not reachable yet: the next command opens it.
    Next: make gke-ui    (opens the UI in the background)
    Next: make gke-info  (shows how to sign in)
