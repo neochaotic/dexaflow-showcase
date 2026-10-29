@@ -6,7 +6,9 @@ tags:
   - showcase
   - gcp
 python_version: "3.12"
+# Without a floor, uv can fall back to a 2021 provider that breaks on Airflow 3.
 dependencies:
+  - apache-airflow-providers-google>=18
   - google-cloud-bigquery==3.27.0
 variables:
   - GCP_PROJECT

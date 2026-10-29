@@ -8,6 +8,9 @@ if [[ -z "${DEXAFLOW_TARGET:-}" ]]; then
   if [[ -f "${REPO_ROOT}/.out/gke.env" ]]; then DEXAFLOW_TARGET=gke; else DEXAFLOW_TARGET=local; fi
 fi
 log "Target: ${DEXAFLOW_TARGET} (set DEXAFLOW_TARGET=local or gke to choose)"
+# The dexaflow CLI (0.5.7+) reads DEXAFLOW_TARGET as the name of one of its own
+# targets and fails on "gke"; keep ours out of the environment it inherits.
+export -n DEXAFLOW_TARGET
 if [[ "${DEXAFLOW_TARGET}" == "gke" ]]; then
   [[ -f "${REPO_ROOT}/.out/gke.env" ]] || die "run 'make gke-up gke-deploy' first"
   # shellcheck disable=SC1091
