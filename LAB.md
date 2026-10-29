@@ -11,7 +11,7 @@ should see. If what you see differs, see [Troubleshooting](#troubleshooting).
 
 | Part | You will | Time |
 |---|---|---|
-| ⏱ **[0. Create the cluster ahead of time](#part-0-create-the-cluster-ahead-of-time)** | **before the session:** create the GKE cluster | 10 min, unattended |
+| [0. Create the cluster ahead of time](#part-0-create-the-cluster-ahead-of-time) | **before the session:** create the GKE cluster | 10 min, unattended |
 | [1. Set up GKE and Dexaflow Pro](#part-1-set-up-gke-and-dexaflow-pro) | install the CLI, connect to the cluster, install Dexaflow Pro, open the Airflow UI | 10 min |
 | [2. Write and deploy DAGs](#part-2-write-and-deploy-dags) | deploy a DAG, create your own workspace, write a DAG, add a dependency and redeploy | 15 min |
 | [3. BigQuery pipelines](#part-3-bigquery-pipelines) | query BigQuery keylessly, run a daily ELT and a 4 million event medallion pipeline | 20 min |
@@ -71,15 +71,15 @@ make gke-ui ◀── port-forward ────   │  Postgres, Redis (in the c
 
 For how the environment is built and how production differs, see [docs/gke.md](docs/gke.md).
 
+---
+
 ## Part 0. Create the cluster ahead of time
 
 > [!IMPORTANT]
-> **Run this part before the session, not during it.** It is the lab's only
-> long wait: about 10 minutes, unattended. The cluster costs a few US dollars a
-> day while it runs, so create it shortly before (the day before a class or a
-> demo is fine) and delete it with [Part 4](#part-4-clean-up) afterwards.
->
-> **Cluster already up?** Go straight to [Part 1](#part-1-set-up-gke-and-dexaflow-pro).
+> **Before the session, not during it.** This part only creates the GKE
+> cluster: about 10 minutes of waiting, unattended. Run it shortly before the
+> session starts (the cluster costs money while it runs), then come back for
+> [Part 1](#part-1-set-up-gke-and-dexaflow-pro).
 
 Run it in Cloud Shell or in your own terminal (see
 [Choose where to run the commands](#choose-where-to-run-the-commands)). Replace
@@ -104,7 +104,9 @@ takes about 8 minutes, while gcloud shows only a spinner.
    Next: make gke-deploy
 ```
 
-Stop here. Part 1 starts from this cluster, in the same or another terminal.
+> [!TIP]
+> **Part 0 is done: stop here.** The lab starts at Part 1, from this cluster,
+> in the same terminal or a new one.
 
 ---
 
