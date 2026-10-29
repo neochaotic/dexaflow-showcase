@@ -9,14 +9,18 @@
 
 ## Before going on stage
 
+- [ ] In a fresh terminal (Cloud Shell included), run Tasks 1 to 4 of
+      [LAB.md, Part 1](../LAB.md#part-1-set-up-gke-and-dexaflow-pro): with the
+      cluster from Part 0 they take a few minutes.
 - [ ] `make gke-ui` running, <http://localhost:8081> signed in (`make gke-info`).
+      In Cloud Shell, Web Preview on port **8081**, not 8080.
 - [ ] A DAG workspace ready (`make workspace`), with an editor open on it.
 - [ ] A terminal with `kubectl -n dexaflow get pods -w`.
 - [ ] Font size up in the terminal and the browser.
 
 ## Flow (about 20 minutes)
 
-1. **The UI** (1 min). It is the Airflow 3.2 UI, unmodified, served by a Go binary.
+1. **The UI** (1 min). It is the Airflow 3 UI, unmodified, served by a Go binary.
 2. **01 Hello pipeline** (3 min). Trigger it; one pod per task appears and
    disappears in the terminal. Show the XCom of `load`.
 3. **02 Dependency isolation** (3 min). Two DAGs, pandas 1.5 and 2.2, both green.
@@ -40,3 +44,6 @@
 | Conference network blocks the cluster | switch to the local k3d environment |
 | A run is slow to start | show the previous successful run in the Grid view |
 | BigQuery error | show the logs of the last successful run |
+| UI stops answering for a few seconds | wait about 15 seconds: the port-forward reconnects on its own; if not, `make gke-ui` |
+| Cloud Shell disconnected while idle | reconnect, `cd ~/dexaflow-showcase && make gke-ui`, reload Web Preview; files in `~` are kept |
+| First `bq` command asks for a project | type the number next to your project |

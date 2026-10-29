@@ -2,7 +2,7 @@
 
 Runnable examples of [Dexaflow](https://github.com/dexadata/dexaflow), the
 Airflow-compatible orchestrator with a Go control plane, the unmodified Airflow
-3.2 UI and one container image per DAG.
+3 UI and one container image per DAG.
 
 Everything here is reproducible: clone it, run a few `make` targets, and you get
 the same result as in the talks. The focus is **Dexaflow Pro** (Kubernetes,
