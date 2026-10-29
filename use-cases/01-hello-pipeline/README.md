@@ -1,6 +1,6 @@
 # 01: Hello pipeline
 
-**Shows:** the unmodified Airflow 3.2 UI served by Dexaflow, and pod-per-task
+**Shows:** the unmodified Airflow 3 UI served by Dexaflow, and pod-per-task
 execution: each task is its own short-lived pod, built from this DAG's own image.
 
 **Run:** `make demo USE_CASE=01-hello-pipeline`
