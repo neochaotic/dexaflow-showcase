@@ -35,5 +35,5 @@ only the GKE environment has.
 
 ## Sign in
 
-<http://localhost:8080>, user `admin@leoflow.local`, password `showcase-admin`.
+<http://localhost:8080>, user `admin@dexaflow.local`, password `showcase-admin`.
 These credentials are for your laptop only.

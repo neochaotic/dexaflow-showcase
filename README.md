@@ -36,7 +36,7 @@ make up         # local k3d cluster + Dexaflow Pro
 make demo       # builds, registers and triggers the use cases
 ```
 
-Open <http://localhost:8080> and sign in as `admin@leoflow.local` with password
+Open <http://localhost:8080> and sign in as `admin@dexaflow.local` with password
 `showcase-admin`. `make down` removes everything.
 
 ## Use cases

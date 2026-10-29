@@ -319,7 +319,7 @@ background. **You should see:**
 ==> It runs in the background, so this terminal stays free (stop it with: make gke-ui-stop)
    Next: make gke-info  (shows how to sign in)
   UI        http://localhost:8081   (start it with: make gke-ui)
-  user      admin@leoflow.local
+  user      admin@dexaflow.local
   password  run: grep -A1 '^bootstrap:' .out/gke-secrets.yaml
   ...
 ```
@@ -333,7 +333,7 @@ grep -A1 '^bootstrap:' .out/gke-secrets.yaml
 
 The password is the text after **`password:`**.
 
-Then open the UI and sign in as **`admin@leoflow.local`** with that password:
+Then open the UI and sign in as **`admin@dexaflow.local`** with that password:
 
 - **Your own machine:** open <http://localhost:8081>.
 - **Cloud Shell:** open the address that `make gke-ui` prints after
@@ -707,7 +707,7 @@ gcloud container clusters list
 | `curl` prints `000` | The UI port-forward is not running: `make gke-ui`. |
 | The UI worked, then stops answering; `kubectl -n dexaflow get pods` shows new pods or `CrashLoopBackOff` | The pods restarted on another node (for example after a node upgrade, or a Spot node reclaimed with `GKE_SPOT=true`). Wait a minute, then `make gke-ui`. If `dexaflow-...` keeps crashing, run `make gke-deploy`, then `make gke-ui`. |
 | `bq` asks for a default project | Type the number next to your project id, then Enter. |
-| `invalid credentials` | The user is `admin@leoflow.local`, not `admin`. |
+| `invalid credentials` | The user is `admin@dexaflow.local`, not `admin`. |
 | `no Dexaflow server at http://localhost:8081` | The UI port-forward is not running: `make gke-ui` (its log is `.out/gke-ui.log`). |
 | `failed  <dag_id>` and a link | Open the link, click the red task, read its log. |
 | An error from `dexaflow compile` | It shows the Python error from `dag.py`; fix it and deploy again. |
