@@ -1,6 +1,6 @@
 # GKE
 
-> To set it up step by step, follow Part 1 of [the lab](../LAB.md#part-1-set-up-gke-and-dexaflow-pro).
+> To set it up step by step, follow Part 1 of [the lab](../LAB.md#part-1-prepare-gke-and-dexaflow-pro-ahead-of-time).
 > This page is the reference: what gets created, what it costs, and how production differs.
 
 The presentation environment. Same chart, same DAGs, plus the BigQuery use

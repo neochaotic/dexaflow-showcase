@@ -9,14 +9,17 @@
 
 ## Before going on stage
 
+- [ ] In a fresh terminal (Cloud Shell included), run the *Coming back to a
+      cluster that is already up* block of [LAB.md, Part 2](../LAB.md#part-2-open-the-airflow-ui).
 - [ ] `make gke-ui` running, <http://localhost:8081> signed in (`make gke-info`).
+      In Cloud Shell, Web Preview on port **8081**, not 8080.
 - [ ] A DAG workspace ready (`make workspace`), with an editor open on it.
 - [ ] A terminal with `kubectl -n dexaflow get pods -w`.
 - [ ] Font size up in the terminal and the browser.
 
 ## Flow (about 20 minutes)
 
-1. **The UI** (1 min). It is the Airflow 3.2 UI, unmodified, served by a Go binary.
+1. **The UI** (1 min). It is the Airflow 3 UI, unmodified, served by a Go binary.
 2. **01 Hello pipeline** (3 min). Trigger it; one pod per task appears and
    disappears in the terminal. Show the XCom of `load`.
 3. **02 Dependency isolation** (3 min). Two DAGs, pandas 1.5 and 2.2, both green.
@@ -27,7 +30,7 @@
 6. **Write a DAG live** (4 min). In the workspace: `make new NAME=live_demo`,
    edit `dag.py` (add a task, or a dependency in `dexaflow.yaml`), then
    `make deploy DAG=dags/live_demo TRIGGER=1`. The new version shows in the UI;
-   the steps are in [LAB.md, Part 2](../LAB.md#part-2-write-and-deploy-dags).
+   the steps are in [LAB.md, Part 3](../LAB.md#part-3-write-and-deploy-dags).
 7. **Medallion** (optional, 3 min). `lab_medallion_daily`: eight DuckDB pods
    generate 4 million events into BigQuery bronze, silver and gold. Show the Gantt.
 8. **Wrap up** (1 min). Everything shown is in this repository; anyone can
@@ -40,3 +43,6 @@
 | Conference network blocks the cluster | switch to the local k3d environment |
 | A run is slow to start | show the previous successful run in the Grid view |
 | BigQuery error | show the logs of the last successful run |
+| UI stops answering for a few seconds | wait about 15 seconds: the port-forward reconnects on its own; if not, `make gke-ui` |
+| Cloud Shell disconnected while idle | reconnect, `cd ~/dexaflow-showcase && make gke-ui`, reload Web Preview; files in `~` are kept |
+| First `bq` command asks for a project | type the number next to your project |
