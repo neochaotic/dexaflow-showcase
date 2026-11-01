@@ -557,19 +557,20 @@ These commands run in the platform clone; each block starts with
 
 ### Task 10. Query BigQuery without a key
 
-[`use-cases/04-gcp-bigquery-report/dag.py`](use-cases/04-gcp-bigquery-report/dag.py)
-uses the stock Airflow BigQuery operators to build the top 5 US baby names per
-decade.
+[`use-cases/05-gcp-bigquery-python/dag.py`](use-cases/05-gcp-bigquery-python/dag.py)
+queries a public GitHub sample with the `google-cloud-bigquery` client, from a
+plain Python task: the 10 languages with the most repositories. It saves them as
+the table `dexaflow_showcase.top_github_languages` and prints them in the log of
+`summarize`.
 
 ```bash
 cd ~/dexaflow-showcase
-make deploy DAG=use-cases/04-gcp-bigquery-report TRIGGER=1
+make deploy DAG=use-cases/05-gcp-bigquery-python TRIGGER=1
 ```
 
-Before deploying, `make deploy` creates the `google_cloud_default` connection
-(no key in it) and the `GCP_PROJECT` and `LAB_DATASET` Variables. See them in the
-UI under **Admin > Connections** and **Admin > Variables**. ⏳ This first build
-takes about 2 minutes because of the Google provider packages.
+Before deploying, `make deploy` creates the `GCP_PROJECT` and `LAB_DATASET`
+Variables; see them in the UI under **Admin > Variables**. ⏳ This first build
+takes about 2 minutes because of the Google client packages.
 
 The first `bq` command in a new Cloud Shell may print *Welcome to BigQuery!*
 and set itself up; if it asks you to pick a default project, type the number
@@ -579,10 +580,18 @@ next to your project id and press Enter.
 
 ```bash
 bq query --use_legacy_sql=false \
-  'SELECT COUNT(*) AS row_count FROM dexaflow_showcase.top_names_by_decade'
+  'SELECT * FROM dexaflow_showcase.top_github_languages ORDER BY repos DESC'
 ```
 
-**`row_count` is `60`**: 5 names for each of 12 decades.
+**Ten rows**, `JavaScript` first. In the UI, the log of `top_github_languages`
+shows the BigQuery job id and the bytes it processed.
+
+> [!NOTE]
+> [`use-cases/04-gcp-bigquery-report`](use-cases/04-gcp-bigquery-report/dag.py)
+> does the same with the stock Airflow BigQuery operators. On Dexaflow 0.5.7 it
+> fails with `NotProvidedError: the DAG run has no attribute 'start_date'`
+> ([dexadata/dexaflow#1843](https://github.com/dexadata/dexaflow/issues/1843)),
+> and so do the BigQuery labs below.
 
 ### Task 11. Deploy the labs
 
