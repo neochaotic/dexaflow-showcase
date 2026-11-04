@@ -13,15 +13,26 @@ read -r answer
 
 bash "$(dirname "$0")/ui.sh" stop
 
-# Delete the namespace first, so GKE deletes the persistent disk behind the
-# chart's log volume; deleting only the cluster leaves that disk billing.
+# Delete the namespace first, so GKE deletes the persistent disks behind the
+# chart's volumes; deleting only the cluster leaves those disks billing. GKE can
+# still be releasing a disk when the cluster goes, so note their names first and
+# delete any that are left once the cluster is gone.
+disks=""
 if gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}" \
     --project "${GCP_PROJECT}" >/dev/null 2>&1; then
+  disks="$(kubectl get pv -o jsonpath="{range .items[?(@.spec.claimRef.namespace=='${NAMESPACE}')]}{.spec.csi.volumeHandle}{'\n'}{end}" 2>/dev/null \
+    | sed -n 's|.*/disks/||p')"
   log "Deleting namespace ${NAMESPACE} and its volumes"
   run kubectl delete namespace "${NAMESPACE}" --ignore-not-found --wait --timeout=5m || true
 fi
 slow "Deleting the cluster takes about 5 minutes"
 run gcloud container clusters delete "${GKE_CLUSTER}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" --quiet || true
+for disk in ${disks}; do
+  if gcloud compute disks describe "${disk}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" >/dev/null 2>&1; then
+    run gcloud compute disks delete "${disk}" --zone "${GKE_ZONE}" --project "${GCP_PROJECT}" --quiet \
+      || warn "disk ${disk} is still there and still billing; delete it in the console under Compute Engine > Disks"
+  fi
+done
 run gcloud artifacts repositories delete "${AR_REPO}" --location "${GKE_REGION}" --project "${GCP_PROJECT}" --quiet || true
 for ds in "${BQ_DATASET}" "${LAB_DATASET}"; do
   run bq --project_id "${GCP_PROJECT}" rm -r -f -d "${GCP_PROJECT}:${ds}" 2>/dev/null || true
