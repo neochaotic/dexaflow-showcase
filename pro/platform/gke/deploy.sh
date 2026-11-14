@@ -13,15 +13,14 @@ run gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZON
 run kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
 # The generated credentials live in .out/gke-secrets.yaml and, as a backup, in
-# the Secret showcase-credentials. A fresh clone restores them from the cluster
-# instead of generating new ones (which would reset Postgres and the login).
-CREDS_SECRET=showcase-credentials
-if [[ ! -f "${GKE_SECRETS}" ]] && kubectl -n "${NAMESPACE}" get secret "${CREDS_SECRET}" >/dev/null 2>&1; then
+# the Secret showcase-credentials. When the cluster has that Secret, it wins:
+# a fresh clone, or one with the files of an older cluster, takes the current
+# credentials instead of generating new ones (which would break Postgres and
+# the login).
+if kubectl -n "${NAMESPACE}" get secret "${CREDS_SECRET}" >/dev/null 2>&1; then
   warn "Dexaflow is already installed on this cluster: reusing its database and login."
   warn "Existing DAGs and runs stay. For an empty Dexaflow: make gke-reset."
-  log "Restoring credentials from the cluster into .out/gke-secrets.yaml"
-  (umask 077; kubectl -n "${NAMESPACE}" get secret "${CREDS_SECRET}" \
-    -o jsonpath='{.data.values\.yaml}' | base64 --decode > "${GKE_SECRETS}")
+  sync_secrets
 fi
 if [[ ! -f "${GKE_SECRETS}" ]]; then
   log "Generating credentials into .out/gke-secrets.yaml (gitignored, reused on every deploy)"

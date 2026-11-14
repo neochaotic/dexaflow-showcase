@@ -2,6 +2,8 @@
 # Print where the GKE demo lives and how to sign in. The password itself stays
 # in .out/gke-secrets.yaml (gitignored) and is never printed.
 source "$(dirname "$0")/lib-gke.sh"
+# Best effort: refresh the local copy from the cluster, if it is reachable.
+sync_secrets || true
 [[ -f "${GKE_SECRETS}" ]] || die "no credentials yet: run 'make gke-deploy' first"
 B=$'\033[1m' R=$'\033[0m'
 cat <<INFO
