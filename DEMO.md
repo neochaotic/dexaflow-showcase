@@ -36,7 +36,7 @@ Also:
       [LAB.md, Part 1](LAB.md#part-1-set-up-gke-and-dexaflow-pro): with the
       cluster already up they take a few minutes and rebuild nothing.
 - [ ] `make gke-ui` running, <http://localhost:8081> signed in as
-      `admin@dexaflow.local` (`make gke-info` shows where the password is).
+      `admin@dexaflow.local` (`make gke-info` shows the password).
       In Cloud Shell, Web Preview on port **8081**, not 8080.
 - [ ] A terminal with `kubectl -n dexaflow get pods -w`.
 - [ ] Font size up in the terminal and the browser.

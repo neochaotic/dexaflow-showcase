@@ -2,7 +2,9 @@
 
 **`invalid credentials` when signing in.** The bootstrap admin signs in with
 the email `admin@dexaflow.local`, not `admin`. Installs made before Dexaflow
-0.5.4 keep `admin@leoflow.local`.
+0.5.4 keep `admin@leoflow.local`. Take the password from `make gke-info`: it
+reads it from the cluster, so it is right even in a clone (or a Cloud Shell)
+that kept the files of an earlier lab.
 
 **`docker push` to `k3d-showcase-registry.localhost:5050` fails to resolve.**
 Some systems do not resolve `*.localhost`. Add

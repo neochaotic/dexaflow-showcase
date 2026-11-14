@@ -65,4 +65,4 @@ if [[ -n "${CLOUD_SHELL:-}" ]]; then
     next "Cloud Shell: Web Preview > Change port > ${GKE_UI_PORT} (not the default 8080)"
   fi
 fi
-next "make gke-info  (shows how to sign in)"
+next "make gke-info  (the address, user and password to sign in)"
