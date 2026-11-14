@@ -3,10 +3,10 @@ SHELL := /usr/bin/env bash
 SCRIPTS := pro/scripts
 USE_CASE ?= all
 
-.PHONY: help cli doctor workspace dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-ui-stop gke-info gke-demo gke-lab gke-prebuild gke-reset gke-down
+.PHONY: help cli doctor workspace dry-run up demo deploy new-dag down gke-up gke-deploy gke-ui gke-ui-stop gke-info gke-demo gke-lab gke-medallion gke-lab-reset gke-prebuild gke-reset gke-down
 
 help: ## Show this help
-	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
 doctor: ## Check that the tools this repo needs are installed
 	@bash $(SCRIPTS)/doctor.sh
@@ -58,8 +58,16 @@ gke-lab: ## Deploy every lab on GKE, run the BigQuery lab setup and one medallio
 	@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/deploy-dags.sh labs/bigquery/01-daily-sales labs/bigquery/02-quality-checks
 	@DEXAFLOW_TARGET=gke TRIGGER=1 bash $(SCRIPTS)/deploy-dags.sh labs/bigquery/00-setup labs/medallion
 
+gke-medallion: ## Deploy and run only the medallion pipeline on GKE (4 million events)
+	@bash pro/platform/gke/ui.sh
+	@DEXAFLOW_TARGET=gke TRIGGER=1 bash $(SCRIPTS)/deploy-dags.sh labs/medallion
+
+gke-lab-reset: ## Empty the lab's BigQuery datasets on GKE, to start the lab from zero
+	@bash pro/platform/gke/ui.sh
+	@DEXAFLOW_TARGET=gke TRIGGER=1 bash $(SCRIPTS)/deploy-dags.sh labs/reset
+
 gke-prebuild: ## The day before a live session: build, register and run every use case and lab once
-	@# One failing DAG must not stop the rest (the BigQuery operator DAGs fail on 0.5.7, #1843).
+	@# One failing DAG must not stop the rest (the BigQuery operator DAGs fail on 0.5.9, dexadata/dexaflow#2473).
 	-@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/demo.sh all
 	-@$(MAKE) --no-print-directory gke-lab
 

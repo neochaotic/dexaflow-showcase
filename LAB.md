@@ -17,6 +17,13 @@ should see. If what you see differs, see [Troubleshooting](#troubleshooting).
 | [3. BigQuery pipelines](#part-3-bigquery-pipelines) | query BigQuery keylessly, run a daily ELT and a 4 million event medallion pipeline | 20 min |
 | [4. Clean up](#part-4-clean-up) | delete everything the lab created | 5 min |
 
+> [!TIP]
+> **Short session: only the medallion pipeline (about 25 minutes).** Do
+> [Part 1](#part-1-set-up-gke-and-dexaflow-pro) (Tasks 1 to 5), then jump to
+> [Task 13](#task-13-look-at-4-million-events) and run it with one command:
+> `make gke-medallion`. Skip Parts 2 and 3 otherwise. To run it again from
+> empty tables, `make gke-lab-reset` (see [labs/reset](labs/reset/README.md)).
+
 Do the parts in order: each one starts where the previous one ended. The only
 long wait is creating the cluster (about 10 minutes), so
 [Part 0](#part-0-create-the-cluster-ahead-of-time) does it before the session
@@ -158,7 +165,7 @@ downloads one: up to 2 minutes with no output after the yellow line.
 **You should see** at the end:
 
 ```
-✔ Dexaflow CLI 0.5.7 is ready
+✔ Dexaflow CLI 0.5.9 is ready
 ==> New terminals find dexaflow on their own. In this one, run:
    Next: export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
@@ -176,7 +183,7 @@ dexaflow version
 make doctor
 ```
 
-`dexaflow version` prints **`0.5.7`**. `make doctor` prints **`ok`** for every
+`dexaflow version` prints **`0.5.9`**. `make doctor` prints **`ok`** for every
 tool and the account you are signed in with; `k3d` and `kubeconform` show
 `skip`, they are not needed for this lab.
 
@@ -290,7 +297,7 @@ restores the same login and database from the cluster, then upgrades in place.
 **You should see** at the end:
 
 ```
-✔ Dexaflow Pro 0.5.7 is running on dexaflow-showcase
+✔ Dexaflow Pro 0.5.9 is running on dexaflow-showcase
 ==> The UI is not reachable yet: the next command opens it.
    Next: make gke-ui    (opens the UI in the background)
    Next: make gke-info  (shows how to sign in)
@@ -548,11 +555,12 @@ These commands run in the platform clone; each block starts with
 `cd ~/dexaflow-showcase`.
 
 > [!WARNING]
-> **Known issue on Dexaflow 0.5.7.** The DAGs of Tasks 10 to 13 use the Google
-> provider's BigQuery operator, and their runs fail with `NotProvidedError: the
+> **Known issue on Dexaflow 0.5.9.** The BigQuery lab DAGs of Tasks 11 and 12
+> use the Google provider's BigQuery operator, and their runs fail with `NotProvidedError: the
 > DAG run has no attribute 'start_date'`
-> ([dexadata/dexaflow#1843](https://github.com/dexadata/dexaflow/issues/1843)).
-> To query BigQuery on 0.5.7, deploy `use-cases/05-gcp-bigquery-python` instead: it
+> ([dexadata/dexaflow#2473](https://github.com/dexadata/dexaflow/issues/2473)).
+> The medallion pipeline of Task 13 does not use it and runs green.
+> To query BigQuery on 0.5.9, deploy `use-cases/05-gcp-bigquery-python` instead: it
 > uses the `google-cloud-bigquery` client from a Python task and runs green.
 
 ### Task 10. Query BigQuery without a key
@@ -588,10 +596,10 @@ shows the BigQuery job id and the bytes it processed.
 
 > [!NOTE]
 > [`use-cases/04-gcp-bigquery-report`](use-cases/04-gcp-bigquery-report/dag.py)
-> does the same with the stock Airflow BigQuery operators. On Dexaflow 0.5.7 it
+> does the same with the stock Airflow BigQuery operators. On Dexaflow 0.5.9 it
 > fails with `NotProvidedError: the DAG run has no attribute 'start_date'`
-> ([dexadata/dexaflow#1843](https://github.com/dexadata/dexaflow/issues/1843)),
-> and so do the BigQuery labs below.
+> ([dexadata/dexaflow#2473](https://github.com/dexadata/dexaflow/issues/2473)),
+> and so do the BigQuery labs of Tasks 11 and 12 (not the medallion).
 
 ### Task 11. Deploy the labs
 
@@ -649,7 +657,18 @@ afterwards, and delete the extra dataset with
 
 ### Task 13. Look at 4 million events
 
-`lab_medallion_daily` ran in Task 11. Its eight `generate_shard` tasks ran as
+`lab_medallion_daily` ran in Task 11. Coming from the short session, run it now:
+
+```bash
+cd ~/dexaflow-showcase
+make gke-medallion
+```
+
+⏱ Measured: **3:03** the first time: it builds the DAG image, then the run
+starts eight pods, and the cluster may add a node for them. It ends with
+**`success  lab_medallion_daily`**.
+
+Its eight `generate_shard` tasks ran as
 eight pods at once; each generated 500,000 synthetic e-commerce events with
 DuckDB, wrote Parquet and loaded it into BigQuery. SQL tasks then refined them:
 
