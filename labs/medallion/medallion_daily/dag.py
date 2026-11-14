@@ -19,21 +19,15 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from airflow.providers.google.cloud.operators.bigquery import (
-    BigQueryCreateEmptyDatasetOperator,
-    BigQueryInsertJobOperator,
-)
 from airflow.sdk import DAG, Param, task
 
-PROJECT = "{{ var.value.GCP_PROJECT }}"
-DATASET = "{{ var.value.LAB_DATASET }}"
 LOCATION = "US"
 SHARDS = 8
 DEFAULT_ROWS_PER_SHARD = 500_000
-MAX_BYTES_BILLED = str(5_000_000_000)  # 5 GB cap per BigQuery job
+MAX_BYTES_BILLED = 5_000_000_000  # 5 GB cap per BigQuery job
 # The SQL lives in sql/ (shipped with the DAG through include_paths in
-# dexaflow.yaml): BigQuery files are rendered by Airflow at run time, the DuckDB
-# file is filled in by generate_shard.
+# dexaflow.yaml): the BigQuery files are Jinja templates rendered by run_sql,
+# the DuckDB file is filled in by generate_shard.
 SQL_DIR = Path(__file__).parent / "sql"
 
 
@@ -44,12 +38,41 @@ def sql(name: str) -> str:
 GENERATE_SQL = sql("generate_shard.duckdb")
 
 
-def bq(task_id: str) -> BigQueryInsertJobOperator:
-    return BigQueryInsertJobOperator(
-        task_id=task_id, project_id=PROJECT, location=LOCATION,
-        configuration={"query": {"query": sql(task_id), "useLegacySql": False,
-                                 "maximumBytesBilled": MAX_BYTES_BILLED}},
-    )
+@task
+def create_dataset() -> None:
+    """Create the lab dataset if it is missing."""
+    import os
+
+    from google.cloud import bigquery
+
+    project = os.environ["AIRFLOW_VAR_GCP_PROJECT"]
+    dataset = bigquery.Dataset(f"{project}.{os.environ['AIRFLOW_VAR_LAB_DATASET']}")
+    dataset.location = LOCATION
+    bigquery.Client(project=project).create_dataset(dataset, exists_ok=True)
+
+
+@task
+def run_sql(name: str, ds=None) -> dict:
+    """Render sql/<name>.sql for the run's day and run it as one BigQuery script."""
+    import os
+
+    import jinja2
+    from google.cloud import bigquery
+
+    project = os.environ["AIRFLOW_VAR_GCP_PROJECT"]
+    var = {"value": {"GCP_PROJECT": project,
+                     "LAB_DATASET": os.environ["AIRFLOW_VAR_LAB_DATASET"]}}
+    query = jinja2.Template(sql(name)).render(var=var, ds=ds)
+    client = bigquery.Client(project=project, location=LOCATION)
+    job = client.query(query, job_config=bigquery.QueryJobConfig(
+        maximum_bytes_billed=MAX_BYTES_BILLED))
+    job.result()
+    print(f"{name}: job {job.job_id}, {job.total_bytes_processed or 0:,} bytes processed")
+    return {"job_id": job.job_id, "bytes_processed": job.total_bytes_processed or 0}
+
+
+def bq(name: str):
+    return run_sql.override(task_id=name)(name)
 
 
 @task
@@ -97,10 +120,7 @@ with DAG(
                                     title="Rows per shard")},
     tags=["lab", "gcp"],
 ):
-    dataset = BigQueryCreateEmptyDatasetOperator(
-        task_id="create_dataset", project_id=PROJECT, dataset_id=DATASET,
-        location=LOCATION, if_exists="ignore",
-    )
+    dataset = create_dataset()
     reset = bq("reset_bronze_day")
     shards = [generate_shard(n) for n in range(SHARDS)]
     silver = bq("silver_events")

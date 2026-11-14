@@ -19,7 +19,7 @@ create_dataset -> reset_bronze_day -> generate_shard x8 -> silver_events -> gold
 ## What it shows
 
 - **Two kinds of tasks in one DAG**: Python tasks with their own dependencies
-  (DuckDB, the BigQuery client) next to the stock Airflow BigQuery operators.
+  (DuckDB, the BigQuery client), one pod each, with the SQL kept in `sql/` files.
 - **Fan-out on Kubernetes**: the eight `generate_shard` tasks run as eight pods
   at once. Each generates its slice in memory with DuckDB (about 500,000 rows
   in under a second), writes Parquet and loads it into BigQuery.
@@ -33,10 +33,11 @@ create_dataset -> reset_bronze_day -> generate_shard x8 -> silver_events -> gold
 Set up the GKE environment first ([LAB.md, Part 1](../../LAB.md#part-1-set-up-gke-and-dexaflow-pro)), then:
 
 ```bash
-make gke-lab
+make gke-medallion
 ```
 
-It deploys the lab and runs one day with the default volume, 8 x 500,000 = 4
+It deploys only this lab and runs one day (about 3 minutes the first time;
+`make gke-lab` does the same with the BigQuery lab too) with the default volume, 8 x 500,000 = 4
 million events. To go bigger, trigger the DAG from the UI with
 **Trigger > rows_per_shard** (for example 2,500,000 for 20 million events).
 
