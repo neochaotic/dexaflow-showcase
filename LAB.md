@@ -284,8 +284,9 @@ make gke-deploy
 This runs Postgres and Redis inside the cluster (enough for a lab; production
 uses Cloud SQL and Memorystore, see [docs/gke.md](docs/gke.md)), then installs the
 Dexaflow Pro Helm chart. It generates an admin password into
-`.out/gke-secrets.yaml`, which git ignores, and keeps a copy in the cluster so
-another clone of the repo reuses it.
+`.out/gke-secrets.yaml`, which git ignores, and keeps the original in the
+cluster, so another clone of the repo, or a Cloud Shell from an earlier lab,
+signs in with the same password.
 
 ⏳ After the `Installing Dexaflow Pro` line, Helm waits until every Dexaflow pod
 runs: 2 to 5 minutes with no output.
@@ -300,7 +301,7 @@ restores the same login and database from the cluster, then upgrades in place.
 ✔ Dexaflow Pro 0.5.9 is running on dexaflow-showcase
 ==> The UI is not reachable yet: the next command opens it.
    Next: make gke-ui    (opens the UI in the background)
-   Next: make gke-info  (shows how to sign in)
+   Next: make gke-info  (the address, user and password to sign in)
 ```
 
 **Check your progress**
@@ -332,27 +333,23 @@ background. **You should see:**
 ```
 ✔ UI on http://localhost:8081
 ==> It runs in the background, so this terminal stays free (stop it with: make gke-ui-stop)
-   Next: make gke-info  (shows how to sign in)
-  UI        http://localhost:8081   (start it with: make gke-ui)
+   Next: make gke-info  (the address, user and password to sign in)
+  open      http://localhost:8081   (needs make gke-ui running)
   user      admin@dexaflow.local
-  password  run: grep -A1 '^bootstrap:' .out/gke-secrets.yaml
+  password  (24 letters and digits)
   ...
 ```
 
-Show your password with the command `make gke-info` prints (it stays on your
-screen only; do not paste it anywhere public):
+In Cloud Shell, **`open`** shows a `https://8081-...cloudshell.dev` link
+instead. The password shows on your screen only; do not paste it anywhere
+public. It always comes from the cluster, so it is right even if this Cloud
+Shell kept the files of an earlier lab.
 
-```bash
-grep -A1 '^bootstrap:' .out/gke-secrets.yaml
-```
-
-The password is the text after **`password:`**.
-
-Then open the UI and sign in as **`admin@dexaflow.local`** with that password:
+Then open the **`open`** address and sign in as **`admin@dexaflow.local`** with
+that password:
 
 - **Your own machine:** open <http://localhost:8081>.
-- **Cloud Shell:** open the address that `make gke-ui` prints after
-  **Cloud Shell: open**. If it printed none, click **Web Preview** (a button
+- **Cloud Shell:** open the `https://8081-...` link. If `open` shows no link, click **Web Preview** (a button
   at the top right of the terminal panel) > **Change port**, type **`8081`**, then **Change and Preview**.
   The default *Preview on port 8080* shows *Unable to forward your request to a
   backend*. If you landed there, change the start of the address from `8080-`
@@ -759,7 +756,7 @@ gcloud container clusters list
 | `curl` prints `000` | The UI port-forward is not running: `make gke-ui`. |
 | The UI worked, then stops answering; `kubectl -n dexaflow get pods` shows new pods or `CrashLoopBackOff` | The pods restarted on another node (for example after a node upgrade, or a Spot node reclaimed with `GKE_SPOT=true`). Wait a minute, then `make gke-ui`. If `dexaflow-...` keeps crashing, run `make gke-deploy`, then `make gke-ui`. |
 | `bq` asks for a default project | Type the number next to your project id, then Enter. |
-| `invalid credentials` | The user is `admin@dexaflow.local`, not `admin`. |
+| `invalid credentials` | The user is `admin@dexaflow.local`, not `admin`. Copy the password again from `make gke-info`, which reads it from the cluster. |
 | `no Dexaflow server at http://localhost:8081` | The UI port-forward is not running: `make gke-ui` (its log is `.out/gke-ui.log`). |
 | `failed  <dag_id>` and a link | Open the link, click the red task, read its log. |
 | An error from `dexaflow compile` | It shows the Python error from `dag.py`; fix it and deploy again. |

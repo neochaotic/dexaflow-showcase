@@ -22,14 +22,17 @@ make gke-up       # APIs, Artifact Registry, cluster, Workload Identity
 make gke-deploy   # Postgres, Redis and Dexaflow Pro on the cluster
 make gke-ui       # UI on http://localhost:8081, in the background (make gke-ui-stop)
 make gke-demo     # build, push, register and trigger every use case
-make gke-info     # UI address, user, and where the password is
+make gke-info     # UI address, user and password
 make gke-lab      # deploy both labs, run the BigQuery lab setup and one medallion day
 ```
 
 `make gke-deploy` generates the admin password into `.out/gke-secrets.yaml`
 (gitignored) and keeps a copy in the cluster as the Secret
-`showcase-credentials`, so a second clone reuses it instead of resetting the
-database. `make gke-info` shows the UI address, the user and where the password is.
+`showcase-credentials`. That Secret is the source of truth: `make gke-deploy`
+and `make gke-info` copy it over the local files, so a second clone, or one with
+the files of an older cluster, signs in with the current password instead of
+resetting the database. `make gke-info` shows the UI address, the user and the
+password.
 
 
 

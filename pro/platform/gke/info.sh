@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
-# Print where the GKE demo lives and how to sign in. The password itself stays
-# in .out/gke-secrets.yaml (gitignored) and is never printed.
+# Print how to open and sign in to the GKE demo: the UI address (the Web
+# Preview link in Cloud Shell), the user and the password. The password comes
+# from the cluster, so it is right even in a clone that kept the files of an
+# older cluster; it shows on this terminal only.
 source "$(dirname "$0")/lib-gke.sh"
 # Best effort: refresh the local copy from the cluster, if it is reachable.
 sync_secrets || true
 [[ -f "${GKE_SECRETS}" ]] || die "no credentials yet: run 'make gke-deploy' first"
+PASSWORD="$(sed -n 's/^  password: //p' "${GKE_SECRETS}")"
+URL="http://localhost:${GKE_UI_PORT}"
+if [[ -n "${CLOUD_SHELL:-}" ]]; then
+  URL="$(cloudshell get-web-preview-url -p "${GKE_UI_PORT}" 2>/dev/null || echo "Web Preview > Change port > ${GKE_UI_PORT}")"
+fi
 B=$'\033[1m' R=$'\033[0m'
 cat <<INFO
-  UI        ${B}http://localhost:${GKE_UI_PORT}${R}   (start it with: make gke-ui)
+  open      ${B}${URL}${R}   (needs make gke-ui running)
   user      ${B}${ADMIN_EMAIL}${R}
-  password  run: ${B}grep -A1 '^bootstrap:' .out/gke-secrets.yaml${R}
+  password  ${B}${PASSWORD}${R}
   project   ${GCP_PROJECT}
   cluster   ${GKE_CLUSTER} (${GKE_ZONE})
   images    ${AR_HOST}/${GCP_PROJECT}/${AR_REPO}
