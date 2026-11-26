@@ -67,7 +67,7 @@ gke-lab-reset: ## Empty the lab's BigQuery datasets on GKE, to start the lab fro
 	@DEXAFLOW_TARGET=gke TRIGGER=1 bash $(SCRIPTS)/deploy-dags.sh labs/reset
 
 gke-prebuild: ## The day before a live session: build, register and run every use case and lab once
-	@# One failing DAG must not stop the rest (the BigQuery operator DAGs fail on 0.5.9, dexadata/dexaflow#2473).
+	@# One failing DAG must not stop the rest.
 	-@DEXAFLOW_TARGET=gke bash $(SCRIPTS)/demo.sh all
 	-@$(MAKE) --no-print-directory gke-lab
 

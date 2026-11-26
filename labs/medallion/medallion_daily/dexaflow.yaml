@@ -6,9 +6,9 @@ tags:
   - lab
   - gcp
 python_version: "3.12"
-# No Airflow provider: the tasks use the BigQuery client library directly
-# (the provider's operators read dag_run.start_date, which Dexaflow does not
-# provide yet, dexadata/dexaflow#2473). DuckDB generates the data inside the
+# No Airflow provider: the tasks use the BigQuery client library directly,
+# which keeps the image small (the provider's operators work since Dexaflow
+# 0.5.10, dexadata/dexaflow#2473). DuckDB generates the data inside the
 # task pod, Jinja renders the SQL files. Exact pins let a code-only change
 # reuse the dependency image.
 dependencies:
