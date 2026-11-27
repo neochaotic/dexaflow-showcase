@@ -165,7 +165,7 @@ downloads one: up to 2 minutes with no output after the yellow line.
 **You should see** at the end:
 
 ```
-✔ Dexaflow CLI 0.5.9 is ready
+✔ Dexaflow CLI 0.5.12 is ready
 ==> New terminals find dexaflow on their own. In this one, run:
    Next: export PATH="$HOME/.dexaflow/bin:$PATH"
 ```
@@ -183,7 +183,7 @@ dexaflow version
 make doctor
 ```
 
-`dexaflow version` prints **`0.5.9`**. `make doctor` prints **`ok`** for every
+`dexaflow version` prints **`0.5.12`**. `make doctor` prints **`ok`** for every
 tool and the account you are signed in with; `k3d` and `kubeconform` show
 `skip`, they are not needed for this lab.
 
@@ -298,7 +298,7 @@ restores the same login and database from the cluster, then upgrades in place.
 **You should see** at the end:
 
 ```
-✔ Dexaflow Pro 0.5.9 is running on dexaflow-showcase
+✔ Dexaflow Pro 0.5.12 is running on dexaflow-showcase
 ==> The UI is not reachable yet: the next command opens it.
    Next: make gke-ui    (opens the UI in the background)
    Next: make gke-info  (the address, user and password to sign in)
@@ -551,15 +551,6 @@ project; they read it from Airflow Variables.
 These commands run in the platform clone; each block starts with
 `cd ~/dexaflow-showcase`.
 
-> [!WARNING]
-> **Known issue on Dexaflow 0.5.9.** The BigQuery lab DAGs of Tasks 11 and 12
-> use the Google provider's BigQuery operator, and their runs fail with `NotProvidedError: the
-> DAG run has no attribute 'start_date'`
-> ([dexadata/dexaflow#2473](https://github.com/dexadata/dexaflow/issues/2473)).
-> The medallion pipeline of Task 13 does not use it and runs green.
-> To query BigQuery on 0.5.9, deploy `use-cases/05-gcp-bigquery-python` instead: it
-> uses the `google-cloud-bigquery` client from a Python task and runs green.
-
 ### Task 10. Query BigQuery without a key
 
 [`use-cases/05-gcp-bigquery-python/dag.py`](use-cases/05-gcp-bigquery-python/dag.py)
@@ -593,10 +584,10 @@ shows the BigQuery job id and the bytes it processed.
 
 > [!NOTE]
 > [`use-cases/04-gcp-bigquery-report`](use-cases/04-gcp-bigquery-report/dag.py)
-> does the same with the stock Airflow BigQuery operators. On Dexaflow 0.5.9 it
-> fails with `NotProvidedError: the DAG run has no attribute 'start_date'`
-> ([dexadata/dexaflow#2473](https://github.com/dexadata/dexaflow/issues/2473)),
-> and so do the BigQuery labs of Tasks 11 and 12 (not the medallion).
+> does the same with the stock Airflow BigQuery operators. They fail on
+> Dexaflow 0.5.9 and earlier
+> ([dexadata/dexaflow#2473](https://github.com/dexadata/dexaflow/issues/2473))
+> and run green since 0.5.10.
 
 ### Task 11. Deploy the labs
 

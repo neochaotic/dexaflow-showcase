@@ -21,8 +21,7 @@ Run these in Cloud Shell or your own terminal, in `~/dexaflow-showcase`.
 `make gke-prebuild` builds each DAG image, registers it and runs it once, so
 the images are in Artifact Registry and on the node, and every DAG has a green
 run to show. Check that `showcase_hello_pipeline` and `showcase_bigquery_python`
-have a green run; `showcase_bigquery_report` fails on 0.5.9 (see the known issues
-below), so pause it in the UI to keep the DAG list green. A hello run triggered
+and `showcase_bigquery_report` have a green run. A hello run triggered
 from the UI after the prebuild takes about 1 minute.
 
 Also:
@@ -58,15 +57,9 @@ If there is time, also from the UI: the two pandas DAGs of
 `02-dependency-isolation` (pandas 1.5 and 2.2, both green).
 
 > [!WARNING]
-> **Known issues on Dexaflow 0.5.9.**
-> - The BigQuery operator DAGs (`showcase_bigquery_report` and the BigQuery
->   labs) fail with `NotProvidedError: the DAG run has no attribute
->   'start_date'` ([dexadata/dexaflow#2473](https://github.com/dexadata/dexaflow/issues/2473)):
->   the Google provider reads `dag_run.start_date`, which Dexaflow does not
->   provide yet. Show `showcase_bigquery_python` instead.
-> - `showcase_fan_out` starts sixteen pods at once and saturates the single
->   node until the cluster grows, which can drop the UI connection. Keep it
->   out of the live part.
+> **Known issue.** `showcase_fan_out` starts sixteen pods at once and
+> saturates the single node until the cluster grows, which can drop the UI
+> connection. Keep it out of the live part.
 
 Writing a DAG live is optional: the steps are in
 [LAB.md, Part 2](LAB.md#part-2-write-and-deploy-dags), and a redeploy that
